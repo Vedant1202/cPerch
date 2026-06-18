@@ -4,11 +4,12 @@
 terminals and the Claude desktop app), shows each session's status and latest message, and lets
 you jump to the existing session window. Tagline: *a perch for your Claude sessions.*
 
-## ⚠️ Project status — SCAFFOLD ONLY
+## ✅ Project status — v0 complete
 
-As of **2026-06-17** this repo contains **documentation and project setup only**. No application
-code exists yet. **Do not begin implementation until the maintainer explicitly greenlights it.**
-When that happens, start from the *Known design challenges* below.
+As of **2026-06-18** v0 is built, runs, and is signed off (git `main`, clean). The full app exists —
+detection pipeline (process + registry + transcript), the menu-bar dot + roster, jump, and calm
+notifications. **New here? Read [docs/handover-v0.md](docs/handover-v0.md) first** — the pickup guide
+(build/run, architecture, the gotchas the build surfaced, and what's next).
 
 ## What we're building (v0)
 
