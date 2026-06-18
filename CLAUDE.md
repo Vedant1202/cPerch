@@ -112,6 +112,8 @@ Swift sources (`Package.swift`, `Sources/…`, `build.sh`) land here once implem
   **`./scripts/test.sh`** runs unit tests (swift-testing — **XCTest is not in the CLT**, so the script
   points the linker at `Testing.framework`). `build.sh` assembles the `.app` (Phase 3).
 - Package is **swift-tools-version 6.0** (needed for swift-testing) with **language mode pinned to v5**.
+- Decisions and their *why* live in [docs/decisions.md](docs/decisions.md) (decision log) — consult it
+  and append new ones as you go. Phase carry-forwards (what P2/P3 must handle) are in [tasks/plan.md](tasks/plan.md).
 - Reading the user's own `~/.claude` transcripts is core to dev/testing — handle that data carefully
   and never exfiltrate it.
 

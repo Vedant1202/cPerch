@@ -149,6 +149,36 @@ P4  Hardening + daily-driver validation (S2, S3, UI checklist, footprint)  ⏸  
 
 ---
 
+## Carry-forward notes (from P1 + S1 → P2 / P3)
+
+Discovered during the parallel build — the next phases must handle these (don't re-derive):
+
+**Into P2 (SessionStore):**
+- **Terminal-app resolution.** `SessionMerger` currently tags terminal hosts generically as
+  `HostRef.terminal(app: "Terminal", tty:)`. Resolve the *actual* app (Terminal vs iTerm2) by walking
+  the process `ppid` to the owning terminal, so Jumper targets the right one. (`ProcessRecord` carries
+  `ppid` + `tty` for this.)
+- **`blockedSince` tracking.** The merger can't know *when* a session entered needs-input from a single
+  snapshot. The store must track status transitions across refreshes and stamp `blockedSince` (drives
+  the roster's "blocked Nm").
+
+**Into P3 (app integration):**
+- **Wire Notifier:** call `Notifier.reconcile(previous:current:)` on each store update (it fires the
+  banner only on →needs-input, coalesced). Its `#if DEBUG` self-check runs once on first init — expected.
+- **Wire Jumper:** connect `RosterView.onJump` (currently a placeholder `NSLog` in `MenuBarController`)
+  to `Jumper.jump(to:)`; add `NSAppleEventsUsageDescription` to the Info.plist via `build.sh`.
+- **Jumper terminal fallback:** degrade-to-activate-the-app when a tty can't be resolved belongs at the
+  *call site* (the `HostRef.terminal` contract has no app-bundle fallback) — resolve an app-activation
+  `HostRef` upstream when tty resolution fails.
+- **Exact-chat deep link (S1, optional):** try `claude://…/chat/<id>` for desktop sessions, but FIRST
+  verify the desktop conversationId == the Code `sessionId` we hold (test against a live desktop
+  session). If it doesn't match, keep activate-the-app. The `/recents` fallback makes trying it safe.
+
+**Process note (multi-agent):** the contract-first freeze made the 7-way fan-out conflict-free.
+Worktree isolation needs the session at the git root (ours is a subdir), so clean `git clone`s were
+used as manual isolation, reconverged by copying disjoint files + one integrated build. Reuse this
+pattern for future fan-outs. Full rationale for all decisions lives in [`../docs/decisions.md`](../docs/decisions.md).
+
 ## Suggested multi-agent dispatch
 1. One agent runs **P0** solo → stop at the freeze checkpoint for review.
 2. Fan **P1** out: up to **7 agents** (A,B,C,G,D,E,F) in parallel + S1 → reconvene at the P1 checkpoint.
