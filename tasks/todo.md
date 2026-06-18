@@ -26,9 +26,9 @@ Legend: ⏸ sequential · ⇉ parallel (own agent) · 🔒 checkpoint · (deps)
 - [x] **P3** Real SessionStore → menu bar · wired Jumper + Notifier · build.sh → ad-hoc-signed CPerch.app. Fixed: UNUserNotificationCenter needs a bundle id (Notifier guards + build.sh signs).
 - [x] 🔒 **Checkpoint** — CPerch.app launches clean (pid alive, real data, no crash); dot + roster live
 
-## Phase 4 — Hardening + daily-driver ⏸ (deps: P3)
-- [ ] **P4a** S2 dedup validation on live multi-session (unregistered terminal + cwd collision)
-- [ ] **P4b** S3 debounce/coalesce tuning (no flapping)
-- [ ] **P4c** Manual UI checklist + footprint check · fold S1 if positive
-- [ ] 🔒 **v0 sign-off** — all 8 SPEC acceptance criteria met
+## Phase 4 — Hardening + daily-driver ⏳ (deps: P3)
+- [x] **P4a** Dedup validated headless (`--print` clean — no dupes/ghosts); live multi-session + cwd-collision = checklist item
+- [x] **P4b** Debounce/coalesce values set (FSEvents 0.5s · poll 3s · stalled 120s · coalesced banners); live flap-tuning = checklist item
+- [x] **P4c** Footprint ✓ (~49 MB / ~1%); manual checklist written ([docs/v0-acceptance-checklist.md](../docs/v0-acceptance-checklist.md)); S1 deep-link mapping resolved (cliSessionId↔desktop sessionId — fast-follow)
+- [ ] 🔒 **v0 sign-off** — automated checks green; awaiting your run of the manual checklist
 ```

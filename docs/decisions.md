@@ -78,6 +78,11 @@ were used as manual isolation, reconverged by copying disjoint files + one integ
 (`claude://…/chat/<uuid>`, UUID-gated → else `/recents`) at zero permission cost. But it takes a
 *conversationId* — unconfirmed whether that equals the Code `sessionId` we hold. Verify live in P3/P4
 before relying on it; the `/recents` fallback makes trying it harmless.
+**Resolved (P4):** the mapping is in `~/Library/Application Support/Claude/claude-code-sessions/**/local_*.json`
+— each maps `cliSessionId` (our Code sessionId) → `sessionId` (the desktop `local_…` id the chat route
+wants). So exact-chat = look that up, then `claude://chat/<id>`, plus a live test of the format (the
+`local_` prefix vs the route's UUID gate). Confirmed conversationId ≠ Code sessionId. Still a fast-follow;
+v0 keeps activate-the-app. (That metadata is also a richer desktop-session source — cwd/model/activity — for later breadth.)
 
 ## D11 — Run as a signed bundle; Notifier guards the bare-binary case · 2026-06-18
 **Decision:** cPerch runs as `CPerch.app` (assembled + **ad-hoc code-signed** by `build.sh`), not a

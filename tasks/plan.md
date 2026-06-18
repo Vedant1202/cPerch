@@ -170,9 +170,10 @@ Discovered during the parallel build — the next phases must handle these (don'
 - **Jumper terminal fallback:** degrade-to-activate-the-app when a tty can't be resolved belongs at the
   *call site* (the `HostRef.terminal` contract has no app-bundle fallback) — resolve an app-activation
   `HostRef` upstream when tty resolution fails.
-- **Exact-chat deep link (S1, optional):** try `claude://…/chat/<id>` for desktop sessions, but FIRST
-  verify the desktop conversationId == the Code `sessionId` we hold (test against a live desktop
-  session). If it doesn't match, keep activate-the-app. The `/recents` fallback makes trying it safe.
+- **Exact-chat deep link (S1/P4 — resolved mapping, optional fast-follow):** `claude-code-sessions/**/local_*.json`
+  maps `cliSessionId` (our id) → `sessionId` (the desktop `local_…` id). To enable: look it up, then
+  `claude://chat/<id>`, and live-test the format (the `local_` prefix vs the route's UUID gate). v0 keeps
+  activate-the-app.
 
 **Process note (multi-agent):** the contract-first freeze made the 7-way fan-out conflict-free.
 Worktree isolation needs the session at the git root (ours is a subdir), so clean `git clone`s were

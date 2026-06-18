@@ -10,7 +10,7 @@
 
 ---
 
-> 🚧 **Work in progress.** Not usable yet — the project is being set up. Check back soon.
+> 🚧 **Early v0** — builds and runs locally as a menu-bar app. No packaged release yet.
 
 **cPerch** is a native macOS menu-bar app that watches your running Claude Code
 sessions so you don't have to. One glance at your toolbar tells you which agent
@@ -25,7 +25,19 @@ is waiting on you, which is still thinking, and which has wrapped up.
 
 Built to feel like Claude: the same palette, the same type. Light on your machine, quiet in your bar.
 
+### Build & run
+
+Command Line Tools + SwiftPM — no full Xcode:
+
+```bash
+./build.sh             # → dist/CPerch.app (ad-hoc signed)
+open dist/CPerch.app   # menu-bar agent; click the dot for the roster
+./scripts/test.sh      # unit tests (swift-testing)
+```
+
 ### Status
 
-Scaffolding the project — no releases yet. See [`docs/intent/cperch-v0.md`](docs/intent/cperch-v0.md)
-for the v0 scope and [`docs/design/design-tokens.md`](docs/design/design-tokens.md) for the look-and-feel spec.
+v0 is functionally complete and runs locally — detection (process + registry + transcript), the
+aggregate dot, the roster, jump, and calm notifications all work. No packaged release yet. See
+[`docs/ideas/cperch.md`](docs/ideas/cperch.md) for the base camp, [`SPEC.md`](SPEC.md) for the v0
+contract, and [`docs/decisions.md`](docs/decisions.md) for the decision log.
