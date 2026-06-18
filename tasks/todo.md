@@ -30,5 +30,5 @@ Legend: ⏸ sequential · ⇉ parallel (own agent) · 🔒 checkpoint · (deps)
 - [x] **P4a** Dedup validated headless (`--print` clean — no dupes/ghosts); live multi-session + cwd-collision = checklist item
 - [x] **P4b** Debounce/coalesce values set (FSEvents 0.5s · poll 3s · stalled 120s · coalesced banners); live flap-tuning = checklist item
 - [x] **P4c** Footprint ✓ (~49 MB / ~1%); manual checklist written ([docs/v0-acceptance-checklist.md](../docs/v0-acceptance-checklist.md)); S1 deep-link mapping resolved (cliSessionId↔desktop sessionId — fast-follow)
-- [ ] 🔒 **v0 sign-off** — automated checks green; awaiting your run of the manual checklist
+- [x] 🔒 **v0 sign-off** — maintainer approved after dry run; automated checks green (39 tests · build · --print · footprint). **v0 complete.**
 ```
