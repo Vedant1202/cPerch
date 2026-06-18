@@ -1,0 +1,10 @@
+{"type":"mode","mode":"default"}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Refactor the parser."}]}}
+{"type":"last-prompt","prompt":"Refactor the parser."}
+{"type":"ai-title","title":"Parser refactor"}
+{"type":"agent-name","name":"general-purpose"}
+{"type":"assistant","message":{"role":"assistant","stop_reason":"end_turn","content":[{"type":"text","text":"Sidechain reasoning that must be ignored."}],"isSidechain":true},"isSidechain":true}
+{"type":"assistant","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"text","text":"Refactoring the parser as requested."},{"type":"tool_use","id":"toolu_meta_1","name":"Edit","input":{}}]}}
+{"type":"permission-mode","mode":"acceptEdits"}
+{"type":"system","content":"system notice"}
+{"type":"file-history-snapshot","snapshot":{}}

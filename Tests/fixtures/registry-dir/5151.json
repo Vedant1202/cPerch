@@ -1,0 +1,9 @@
+{
+  "pid": 5151,
+  "sessionId": "00000000-0000-4000-8000-000000000002",
+  "cwd": "/Users/USER/Projects/desktop-app",
+  "startedAt": 1781751111111,
+  "kind": "interactive",
+  "entrypoint": "claude-desktop",
+  "version": "1.4.0"
+}

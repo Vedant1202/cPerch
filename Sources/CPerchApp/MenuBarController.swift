@@ -1,21 +1,43 @@
 import AppKit
+import SwiftUI
 import CPerchCore
 
-/// P0 skeleton: an `NSStatusItem` whose dot reflects the store's aggregate state,
-/// plus a minimal text menu listing sessions. The rich SwiftUI roster is P1-D.
-final class MenuBarController {
+/// Owns the `NSStatusItem`: paints the aggregate dot in the bar and hosts the rich
+/// SwiftUI `RosterView` (P1-D) in an `NSPopover` shown when the bar button is clicked.
+///
+/// The dot reflects `store.aggregate` (most-urgent-wins, live-only); the popover lists
+/// the sessions. Both refresh on the store's `onChange`. Jump is a placeholder until the
+/// real Jumper integrates in P3.
+final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let store: SessionProviding
+    private let popover = NSPopover()
+    private let hosting: NSHostingController<RosterView>
 
     init(store: SessionProviding) {
         self.store = store
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        hosting = NSHostingController(rootView: RosterView(sessions: store.sessions))
+        super.init()
+
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentViewController = hosting
+
+        if let button = statusItem.button {
+            button.target = self
+            button.action = #selector(togglePopover)
+            button.toolTip = "cPerch"
+        }
+
         store.onChange = { [weak self] in
             DispatchQueue.main.async { self?.refresh() }
         }
         store.start()
         refresh()
     }
+
+    // MARK: - Bar dot
 
     private func color(for state: AggregateState) -> NSColor {
         switch state {
@@ -30,33 +52,50 @@ final class MenuBarController {
             let image = Self.dotImage(color: color(for: store.aggregate))
             image.isTemplate = false
             button.image = image
-            button.toolTip = "cPerch"
         }
-        statusItem.menu = buildMenu()
+        // Keep the open roster in sync with live session changes.
+        updateRoster()
     }
 
-    private func buildMenu() -> NSMenu {
-        let menu = NSMenu()
-        if store.sessions.isEmpty {
-            menu.addItem(NSMenuItem(title: "No active sessions", action: nil, keyEquivalent: ""))
-        } else {
-            for s in store.sessions {
-                let dot: String
-                switch s.status {
-                case .needsInput: dot = "🟠"
-                case .running:    dot = "🔵"
-                case .concluded:  dot = "✅"
-                }
-                menu.addItem(NSMenuItem(title: "\(dot)  \(s.displayName) — \(s.status.rawValue)",
-                                        action: nil, keyEquivalent: ""))
-            }
-        }
-        menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit cPerch",
-                                action: #selector(NSApplication.terminate(_:)),
-                                keyEquivalent: "q"))
-        return menu
+    private func updateRoster() {
+        hosting.rootView = makeRoster()
     }
+
+    private func makeRoster() -> RosterView {
+        RosterView(
+            sessions: store.sessions,
+            onJump: { [weak self] session in self?.jump(to: session) },
+            onQuit: { NSApplication.shared.terminate(nil) }
+        )
+    }
+
+    // MARK: - Popover
+
+    @objc private func togglePopover() {
+        if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            showPopover()
+        }
+    }
+
+    private func showPopover() {
+        guard let button = statusItem.button else { return }
+        updateRoster()
+        // Size the popover to the SwiftUI content (RosterView is a fixed 340pt wide).
+        popover.contentSize = hosting.sizeThatFits(in: NSSize(width: 340, height: 600))
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
+    }
+
+    // MARK: - Jump (placeholder — real Jumper lands in P3)
+
+    private func jump(to session: Session) {
+        NSLog("cPerch: jump requested → \(session.displayName) [\(session.id)] host=\(session.host)")
+        popover.performClose(nil)
+    }
+
+    // MARK: - Bar dot rendering
 
     private static func dotImage(color: NSColor, diameter: CGFloat = 10) -> NSImage {
         let size = NSSize(width: diameter, height: diameter)
