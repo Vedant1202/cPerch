@@ -108,8 +108,10 @@ Swift sources (`Package.swift`, `Sources/…`, `build.sh`) land here once implem
 
 - **macOS-only, native.** Prefer native APIs over shelling out where practical.
 - Keep the bar app **lightweight** — it idles all day; watch memory/CPU.
-- When implementation starts: small, verifiable increments; build with `swift build`; assemble/run
-  the `.app` via `build.sh`.
+- When implementing: small, verifiable increments. `swift build` compiles, `swift run CPerchApp` runs,
+  **`./scripts/test.sh`** runs unit tests (swift-testing — **XCTest is not in the CLT**, so the script
+  points the linker at `Testing.framework`). `build.sh` assembles the `.app` (Phase 3).
+- Package is **swift-tools-version 6.0** (needed for swift-testing) with **language mode pinned to v5**.
 - Reading the user's own `~/.claude` transcripts is core to dev/testing — handle that data carefully
   and never exfiltrate it.
 

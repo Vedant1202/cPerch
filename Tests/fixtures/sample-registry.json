@@ -1,0 +1,10 @@
+{
+  "pid": 4242,
+  "sessionId": "00000000-0000-4000-8000-000000000001",
+  "cwd": "/Users/USER/Projects/example",
+  "startedAt": 1781750000000,
+  "status": "waiting",
+  "kind": "interactive",
+  "entrypoint": "cli",
+  "version": "2.1.181"
+}

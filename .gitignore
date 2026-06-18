@@ -9,6 +9,9 @@
 .swiftpm/
 # Package.resolved is intentionally committed (locks app dependency versions)
 
+# ── Local test fixtures (sanitized real ~/.claude captures) ──
+Tests/fixtures/local/
+
 # ── Xcode (only relevant if xcodebuild is ever used) ───
 DerivedData/
 *.xcuserstate
