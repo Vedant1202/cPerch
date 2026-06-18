@@ -97,7 +97,11 @@ detection, fully local, incapable of interfering with your sessions.
   new-agent opt-in, coalesced.
 
 ## Remaining Spikes (before / while building)
-- Discover the `claude://` route table (exact-chat deep-link feasibility for desktop).
+- ~~Discover the `claude://` route table~~ — **DONE (S1):** the scheme has `OpenConversation`/`chat`
+  and `OpenProject`/`project` routes — `claude://…/chat/<uuid>` navigates to that conversation (id
+  UUID-validated; bad id → `/recents`, harmless). Exact-chat desktop jump is viable at **zero
+  permission cost**; gated on confirming the desktop **conversationId == Code sessionId** for desktop
+  Code sessions (verify against a live session in P3/P4). v0 keeps the activate-the-app baseline.
 - Validate the dedup spine + liveness against a live multi-session machine.
 - Confirm the needs-input debounce/coalesce window feels calm (no flapping).
 

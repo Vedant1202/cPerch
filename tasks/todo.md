@@ -15,7 +15,7 @@ Legend: ⏸ sequential · ⇉ parallel (own agent) · 🔒 checkpoint · (deps)
 - [x] **P1-D** Roster + MenuBar UI (aggregate dot, design tokens) vs stub — CPerchApp
 - [x] **P1-E** Jumper — terminal Apple Events + desktop activate, never duplicate — CPerchApp
 - [x] **P1-F** Notifier — UNUserNotificationCenter, coalesce, DND-aware — CPerchApp
-- [ ] **S1** claude:// route discovery spike *(independent — still pending)*
+- [x] **S1** claude:// route spike — `chat`/`project` open routes exist (`claude://…/chat/<uuid>`, UUID-gated → else `/recents`); exact-chat desktop jump viable at zero permission cost, pending sessionId↔conversationId check (P3/P4). v0 keeps activate-app baseline.
 - [x] 🔒 **Checkpoint** — integrated build green · 30 CPerchCore tests green · UI/jump/notify built (manual visual verify deferred to P3/P4)
 
 ## Phase 2 — SessionStore ⏸ (deps: P1-A,B,C,G)
