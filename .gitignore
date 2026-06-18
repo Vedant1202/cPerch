@@ -1,0 +1,38 @@
+# ── macOS ──────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+
+# ── Swift Package Manager ──────────────────────────────
+.build/
+.swiftpm/
+# Package.resolved is intentionally committed (locks app dependency versions)
+
+# ── Xcode (only relevant if xcodebuild is ever used) ───
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# ── Build / release artifacts ──────────────────────────
+build/
+dist/
+*.app
+*.dmg
+*.pkg
+*.zip
+
+# ── Code signing / notarization secrets ────────────────
+*.p12
+*.cer
+*.provisionprofile
+notarization*.json
+.env
+.env.*
+
+# ── Editor ─────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
