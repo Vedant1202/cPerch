@@ -2,6 +2,38 @@ import AppKit
 import CPerchCore
 
 // cPerch — menu-bar agent (LSUIElement / no Dock icon).
+
+// `--print` debug mode (P2): run the real SessionStore once, print the sessions, and exit —
+// without starting the menu bar (the stub → real-store UI swap is Phase 3).
+if CommandLine.arguments.contains("--print") {
+    let store = SessionStore()
+    store.refresh()
+    func glyph(_ s: DerivedStatus) -> String {
+        switch s {
+        case .needsInput: return "🟠"
+        case .running:    return "🔵"
+        case .concluded:  return "✅"
+        }
+    }
+    let rows = store.sessions
+    print("\ncPerch · --print · \(rows.count) sessions\n")
+    for s in rows {
+        let host: String
+        switch s.host {
+        case let .terminal(app, tty): host = "\(app):\(tty)"
+        case .desktop:                host = "desktop"
+        case .unknown:                host = "—"
+        }
+        let status = s.status.rawValue.padding(toLength: 11, withPad: " ", startingAt: 0)
+        print("  \(glyph(s.status)) \(status) \(s.displayName)  pid=\(s.pid.map(String.init) ?? "—")  host=\(host)")
+        if let m = s.latestMessage, !m.isEmpty {
+            print("       ↳ \(m.replacingOccurrences(of: "\n", with: " ").prefix(72))")
+        }
+    }
+    print("")
+    exit(0)
+}
+
 // P0 walking skeleton: a Claude-colored status dot driven by the stub store.
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)

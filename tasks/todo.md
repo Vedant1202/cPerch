@@ -18,9 +18,9 @@ Legend: ⏸ sequential · ⇉ parallel (own agent) · 🔒 checkpoint · (deps)
 - [x] **S1** claude:// route spike — `chat`/`project` open routes exist (`claude://…/chat/<uuid>`, UUID-gated → else `/recents`); exact-chat desktop jump viable at zero permission cost, pending sessionId↔conversationId check (P3/P4). v0 keeps activate-app baseline.
 - [x] 🔒 **Checkpoint** — integrated build green · 30 CPerchCore tests green · UI/jump/notify built (manual visual verify deferred to P3/P4)
 
-## Phase 2 — SessionStore ⏸ (deps: P1-A,B,C,G)
-- [ ] **P2** Real wiring (A+B+C+G) + FSEvents/poll refresh + concluded retention + aggregate state + `--print` debug mode
-- [ ] 🔒 **Checkpoint** — core emits correct [Session] headless on the live machine
+## Phase 2 — SessionStore ✓ (deps: P1-A,B,C,G)
+- [x] **P2** Real wiring (A+B+C+G) + FSEvents/poll refresh + concluded retention (3h/cap10) + `blockedSince` tracking + terminal-app resolution + `--print` debug — 9 helper tests
+- [x] 🔒 **Checkpoint** — `--print` on live machine: this session shows 🔵 running (correct cwd/host/preview); concluded retention applied; 39 tests green
 
 ## Phase 3 — App integration ⏸ (deps: P2 + P1-D,E,F)
 - [ ] **P3** Real store → app · wire Notifier + Jumper · build.sh → CPerch.app (LSUIElement + AppleEvents usage + icon)
