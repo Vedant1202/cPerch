@@ -114,6 +114,9 @@ Swift sources (`Package.swift`, `Sources/…`, `build.sh`) land here once implem
 - Package is **swift-tools-version 6.0** (needed for swift-testing) with **language mode pinned to v5**.
 - Decisions and their *why* live in [docs/decisions.md](docs/decisions.md) (decision log) — consult it
   and append new ones as you go. Phase carry-forwards (what P2/P3 must handle) are in [tasks/plan.md](tasks/plan.md).
+- Run the real app as the **bundle**: `./build.sh` then `open dist/CPerch.app` — `UNUserNotificationCenter`
+  needs a signed bundle (build.sh ad-hoc signs it). Bare `swift run CPerchApp` launches but notifications
+  no-op; `swift run CPerchApp --print` dumps the live sessions headless.
 - Reading the user's own `~/.claude` transcripts is core to dev/testing — handle that data carefully
   and never exfiltrate it.
 

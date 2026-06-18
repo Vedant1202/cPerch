@@ -18,11 +18,15 @@ import UserNotifications
 /// posting path (``reconcile(previous:current:notifyNewAgent:)``) just calls it and
 /// hands the result to the notification center.
 final class Notifier {
-    private let center: UNUserNotificationCenter
+    // `UNUserNotificationCenter.current()` THROWS unless the process is a real bundle (has a
+    // CFBundleIdentifier). Resolve it guardedly so a bare `swift run` binary (no Info.plist)
+    // never crashes — notifications simply no-op until the app runs as CPerch.app (built by
+    // build.sh, which also ad-hoc signs it so the notification center is available).
+    private let center: UNUserNotificationCenter?
     private var didRequestAuthorization = false
 
-    init(center: UNUserNotificationCenter = .current()) {
-        self.center = center
+    init() {
+        self.center = Bundle.main.bundleIdentifier != nil ? .current() : nil
         #if DEBUG
         Self.runSelfCheckOnce
         #endif
@@ -93,14 +97,14 @@ final class Notifier {
                    notifyNewAgent: Bool = false) {
         let texts = Self.banners(previous: previous, current: current,
                                  notifyNewAgent: notifyNewAgent)
-        guard !texts.isEmpty else { return }
-        Task { await post(texts) }
+        guard !texts.isEmpty, let center else { return }   // no bundle → notifications no-op
+        Task { await post(texts, center: center) }
     }
 
     /// Ensure authorization (once), then post each banner. Failures are swallowed:
     /// a denied permission or a post error must never disrupt the user's sessions.
-    private func post(_ texts: [String]) async {
-        await requestAuthorizationIfNeeded()
+    private func post(_ texts: [String], center: UNUserNotificationCenter) async {
+        await requestAuthorizationIfNeeded(center: center)
         for text in texts {
             let content = UNMutableNotificationContent()
             content.title = "cPerch"
@@ -115,7 +119,7 @@ final class Notifier {
 
     /// Request alert+sound authorization the first time we need to post. Idempotent;
     /// the system only actually prompts the user once.
-    private func requestAuthorizationIfNeeded() async {
+    private func requestAuthorizationIfNeeded(center: UNUserNotificationCenter) async {
         guard !didRequestAuthorization else { return }
         didRequestAuthorization = true
         _ = try? await center.requestAuthorization(options: [.alert, .sound])

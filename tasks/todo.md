@@ -22,9 +22,9 @@ Legend: ⏸ sequential · ⇉ parallel (own agent) · 🔒 checkpoint · (deps)
 - [x] **P2** Real wiring (A+B+C+G) + FSEvents/poll refresh + concluded retention (3h/cap10) + `blockedSince` tracking + terminal-app resolution + `--print` debug — 9 helper tests
 - [x] 🔒 **Checkpoint** — `--print` on live machine: this session shows 🔵 running (correct cwd/host/preview); concluded retention applied; 39 tests green
 
-## Phase 3 — App integration ⏸ (deps: P2 + P1-D,E,F)
-- [ ] **P3** Real store → app · wire Notifier + Jumper · build.sh → CPerch.app (LSUIElement + AppleEvents usage + icon)
-- [ ] 🔒 **Checkpoint** — app runs in the bar with real sessions
+## Phase 3 — App integration ✓ (deps: P2 + P1-D,E,F)
+- [x] **P3** Real SessionStore → menu bar · wired Jumper + Notifier · build.sh → ad-hoc-signed CPerch.app. Fixed: UNUserNotificationCenter needs a bundle id (Notifier guards + build.sh signs).
+- [x] 🔒 **Checkpoint** — CPerch.app launches clean (pid alive, real data, no crash); dot + roster live
 
 ## Phase 4 — Hardening + daily-driver ⏸ (deps: P3)
 - [ ] **P4a** S2 dedup validation on live multi-session (unregistered terminal + cwd collision)

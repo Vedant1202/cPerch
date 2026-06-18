@@ -78,3 +78,12 @@ were used as manual isolation, reconverged by copying disjoint files + one integ
 (`claude://…/chat/<uuid>`, UUID-gated → else `/recents`) at zero permission cost. But it takes a
 *conversationId* — unconfirmed whether that equals the Code `sessionId` we hold. Verify live in P3/P4
 before relying on it; the `/recents` fallback makes trying it harmless.
+
+## D11 — Run as a signed bundle; Notifier guards the bare-binary case · 2026-06-18
+**Decision:** cPerch runs as `CPerch.app` (assembled + **ad-hoc code-signed** by `build.sh`), not a
+bare `swift run` binary. `Notifier` guards on a bundle id so a bare binary still launches (with
+notifications disabled); `--print` and dev runs work unsigned.
+**Why:** `UNUserNotificationCenter.current()` throws an *uncatchable* `NSException` unless the process
+is a real bundle with a `CFBundleIdentifier` (and is code-signed). Caught at P3 launch — the bare
+`.build/debug/CPerchApp` crashed in `Notifier.init`. Fix: `build.sh` ad-hoc signs the bundle, and the
+guard (`Bundle.main.bundleIdentifier != nil`) keeps bare `swift run` / `--print` crash-free.

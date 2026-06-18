@@ -34,11 +34,11 @@ if CommandLine.arguments.contains("--print") {
     exit(0)
 }
 
-// P0 walking skeleton: a Claude-colored status dot driven by the stub store.
+// Live menu bar: the real SessionStore drives the aggregate dot + roster.
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
-let store = StubSessionStore()
+let store = SessionStore()
 let controller = MenuBarController(store: store)
 _ = controller   // retained for the app's lifetime
 

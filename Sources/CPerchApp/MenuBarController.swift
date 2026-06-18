@@ -13,6 +13,8 @@ final class MenuBarController: NSObject {
     private let store: SessionProviding
     private let popover = NSPopover()
     private let hosting: NSHostingController<RosterView>
+    private let notifier = Notifier()
+    private var previousSessions: [Session] = []
 
     init(store: SessionProviding) {
         self.store = store
@@ -48,11 +50,15 @@ final class MenuBarController: NSObject {
     }
 
     private func refresh() {
+        let current = store.sessions
         if let button = statusItem.button {
             let image = Self.dotImage(color: color(for: store.aggregate))
             image.isTemplate = false
             button.image = image
         }
+        // Calm needs-input banners on →needsInput transitions (coalesced; DND-aware via macOS).
+        notifier.reconcile(previous: previousSessions, current: current)
+        previousSessions = current
         // Keep the open roster in sync with live session changes.
         updateRoster()
     }
@@ -91,7 +97,7 @@ final class MenuBarController: NSObject {
     // MARK: - Jump (placeholder — real Jumper lands in P3)
 
     private func jump(to session: Session) {
-        NSLog("cPerch: jump requested → \(session.displayName) [\(session.id)] host=\(session.host)")
+        Jumper.jump(to: session)   // focus the existing host window/tab; never a duplicate
         popover.performClose(nil)
     }
 
