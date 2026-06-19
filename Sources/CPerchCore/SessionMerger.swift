@@ -20,6 +20,28 @@ public enum SessionMerger {
     /// while, so we avoid a premature "needs you" (matches the spike's threshold).
     static let stalledThreshold: TimeInterval = 120
 
+    /// How far a live process's start time may diverge from a registry entry's
+    /// `startedAt` before we treat the pid as RECYCLED rather than the session's own
+    /// process (D3 / DD-3). macOS reuses PIDs: a crashed session's lingering `<pid>.json`
+    /// plus a reused pid would otherwise show a dead session as alive and aim "jump" at
+    /// the wrong window. A reused pid's new process starts minutes–hours after the dead
+    /// session's `startedAt`, so a loose tolerance catches reuse with ~zero false rejects.
+    static let pidReuseTolerance: TimeInterval = 120
+
+    /// Whether a registry-pid bind can be trusted — i.e. the live process holding `pid`
+    /// is plausibly the same process that registry `entry` recorded, not a PID-reuse
+    /// impostor (D3). Pure; called by Pass 1 before binding.
+    ///
+    /// Returns `true` when EITHER start time is unknown (`nil`) — we never regress on
+    /// missing data (DD-3) — else only when the two instants agree within `tolerance`.
+    static func bindIsTrustworthy(process: ProcessRecord, entry: RegistryEntry,
+                                  tolerance: TimeInterval = pidReuseTolerance) -> Bool {
+        guard let pStart = process.startTime, let rStart = entry.startedAt else {
+            return true   // unknown start → trust (no regression on missing data)
+        }
+        return abs(pStart.timeIntervalSince(rStart)) <= tolerance
+    }
+
     /// Merge the three per-source record streams into unified sessions.
     ///
     /// - Parameters:
@@ -47,11 +69,19 @@ public enum SessionMerger {
         // for an unregistered process, by matching a transcript on cwd + recency.
         var pidForSession: [String: Int] = [:]   // sessionId → live pid
 
-        // Pass 1: registered processes bind their session directly.
+        // Pass 1: registered processes bind their session directly — but only when the
+        // bind is trustworthy (D3 / DD-4). macOS recycles PIDs, so a registry pid that's
+        // now held by a process with a mismatched start time is a reuse impostor: the
+        // real session is gone. We DROP such a bind — and deliberately do NOT fall it
+        // through to `unregistered` (it isn't our session, so it must not claim a
+        // transcript by cwd in Pass 2 either) — so the session resolves `concluded`.
         var unregistered: [ProcessRecord] = []
         for p in processes {
             if let entry = registryByPid[p.pid] {
-                pidForSession[entry.sessionId] = p.pid
+                if bindIsTrustworthy(process: p, entry: entry) {
+                    pidForSession[entry.sessionId] = p.pid
+                }
+                // else: confident PID-reuse mismatch → drop the bind, don't re-claim.
             } else {
                 unregistered.append(p)
             }

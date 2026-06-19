@@ -60,14 +60,17 @@ public struct RegistryReader {
             cwd: dto.cwd,
             status: dto.status,      // optional — absent in older/desktop files
             kind: dto.kind,
-            version: dto.version
-        )
+            version: dto.version,
+            startedAt: dto.startedAt.map { Date(timeIntervalSince1970: Double($0) / 1000.0) }
+        )                            // `startedAt` is epoch MILLISECONDS; absent → nil (D3)
     }
 
     /// On-disk shape of a `~/.claude/sessions/<pid>.json` file. Only the fields cPerch
-    /// needs are declared; any others (e.g. `startedAt`, `entrypoint`) are ignored.
+    /// needs are declared; any others (e.g. `entrypoint`, `procStart`) are ignored.
     /// `RegistryEntry` is the frozen public contract and intentionally not `Codable`,
-    /// so this private DTO carries the decoding.
+    /// so this private DTO carries the decoding. `startedAt` is the registry's epoch-
+    /// MILLISECONDS session-start instant (D3 PID-reuse guard); it is optional because
+    /// older CLIs / partial writes may omit it.
     private struct SessionFile: Decodable {
         let pid: Int
         let sessionId: String
@@ -75,5 +78,6 @@ public struct RegistryReader {
         let status: String?
         let kind: String?
         let version: String?
+        let startedAt: Int?
     }
 }

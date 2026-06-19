@@ -105,7 +105,9 @@ public final class SessionStore: SessionProviding {
     private func gatherTranscripts(registry: [RegistryEntry], now: Date) -> [TranscriptSignal] {
         var byId: [String: TranscriptSignal] = [:]
 
-        // 1) Registry sessions — exact path from cwd + sessionId, authoritative cwd.
+        // 1) Registry sessions — exact path from cwd + sessionId. `e.cwd` is the
+        //    authoritative registry cwd; the reader will confirm it against the
+        //    transcript's own top-level `cwd` (they agree for real sessions).
         for e in registry {
             let path = transcriptPath(cwd: e.cwd, sessionId: e.sessionId)
             if let sig = transcriptReader.read(path: path, sessionId: e.sessionId, cwd: e.cwd) {
@@ -113,8 +115,11 @@ public final class SessionStore: SessionProviding {
             }
         }
 
-        // 2) Recent project transcripts — for concluded sessions not in the registry.
-        //    cwd is best-effort decoded from the dir name (registry sessions above win).
+        // 2) Recent project transcripts — for sessions not in the registry. `file.cwd`
+        //    is a best-effort `decodeProjectDir` of the dir name and is passed only as a
+        //    FALLBACK: TranscriptReader now prefers the record's own exact `cwd` (D1 /
+        //    DD-1), so the lossy decode no longer poisons SessionMerger's cwd join for
+        //    hyphenated dirs. It is used verbatim only when a record carries no `cwd`.
         for file in recentTranscriptFiles() where byId[file.sessionId] == nil {
             guard now.timeIntervalSince(file.mtime) <= recentTranscriptWindow else { continue }
             if let sig = transcriptReader.read(path: file.url.path, sessionId: file.sessionId, cwd: file.cwd) {
@@ -155,8 +160,10 @@ public final class SessionStore: SessionProviding {
     }
 
     /// Best-effort reverse of `encodeProjectDir`. Lossy for paths whose components contain
-    /// "-" (only used for unregistered concluded sessions' display; registry sessions carry
-    /// the real cwd). Carry-forward: read the transcript's own `cwd` field to make this exact.
+    /// "-" (`…/claude-toolbar-mac` → `…/claude/toolbar/mac`). As of D1 (DD-1) this is a
+    /// FALLBACK ONLY: TranscriptReader reads the transcript's own exact `cwd`, so this
+    /// decoded value is used solely when a transcript carries no `cwd` field. It never
+    /// reaches SessionMerger's cwd join for any real (cwd-bearing) transcript.
     static func decodeProjectDir(_ dir: String) -> String {
         "/" + dir.split(separator: "-").joined(separator: "/")
     }

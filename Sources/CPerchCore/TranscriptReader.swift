@@ -15,9 +15,12 @@ import Foundation
 //   • lastText                  — the latest assistant text block (preview),
 //   • lastActivity              — the file's modification time.
 //
-// `sessionId` and `cwd` are not carried in the transcript body, so the caller
-// (SessionMerger / SessionStore) supplies them — it already knows them from the
-// registry or the projects/<enc-cwd>/<sessionId>.jsonl path.
+// `sessionId` is not carried reliably enough to key on, so the caller supplies it.
+// `cwd` HOWEVER is carried on every real record as an exact top-level field (D1 /
+// DD-1): we read it from the last real record that has one and fall back to the
+// caller-supplied `cwd` only when no record carries it. This matters because the
+// recent-files path supplies a `decodeProjectDir`-mangled cwd that is also a join
+// key in SessionMerger Pass 2 — echoing it would mis-bind hyphenated-dir sessions.
 // ─────────────────────────────────────────────────────────────────────────────
 
 public struct TranscriptReader: Sendable {
@@ -44,7 +47,7 @@ public struct TranscriptReader: Sendable {
 
         return TranscriptSignal(
             sessionId: sessionId,
-            cwd: cwd,
+            cwd: recordCwd(in: real) ?? cwd,   // transcript's own cwd wins; argument is fallback
             lastRole: message?["role"] as? String,
             lastStopReason: message?["stop_reason"] as? String,
             pendingToolUses: pending,
@@ -102,6 +105,18 @@ public struct TranscriptReader: Sendable {
     }
 
     // MARK: - Derivations
+
+    /// The transcript-owned working directory: the top-level `cwd` of the last real
+    /// record that carries one (D1 / DD-1). Real Claude records all carry an exact
+    /// `cwd`; reading it here lets the merger join on the authoritative path instead
+    /// of a lossy `decodeProjectDir` guess. Returns nil when no record has a `cwd`
+    /// (e.g. a synthetic/legacy transcript), in which case the caller's fallback is used.
+    private func recordCwd(in real: [[String: Any]]) -> String? {
+        for object in real.reversed() {
+            if let cwd = object["cwd"] as? String, !cwd.isEmpty { return cwd }
+        }
+        return nil
+    }
 
     /// Count tool_use ids that have no matching tool_result `tool_use_id` — i.e.
     /// tool calls still awaiting a result (the agent is executing, or is parked

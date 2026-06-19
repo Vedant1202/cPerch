@@ -1,7 +1,7 @@
 # cPerch — v0 handover
 
 *For an agent (or human) picking up after v0. Read this first; it links to everything else.*
-*Last updated 2026-06-18 · v0 complete + signed off (git `main`, 10 commits, tree clean).*
+*Last updated 2026-06-18 · v0 complete + signed off (git `main`, 10 commits). Post-v0 dedup/merge gap analysis appended below (§Dedup & merge — gap analysis).*
 
 ## TL;DR
 **cPerch** is a focused, minimal, **Claude-native macOS menu-bar app** that watches your running
@@ -70,8 +70,10 @@ Package.swift · build.sh · scripts/{test.sh,capture-fixtures.sh}
    to real `user`/`assistant`, drop `isSidechain`.
 6. **Version skew:** the desktop app's bundled claude-code may omit the `status` field → transcript
    fallback. Don't assume `status` is always present.
-7. **`SessionStore.decodeProjectDir` is lossy** for cwds whose path components contain `-` (only affects
-   unregistered concluded sessions' display names). Fix is noted below.
+7. **`SessionStore.decodeProjectDir` is lossy** for cwds whose path components contain `-` — and it's
+   worse than cosmetic. The mangled cwd is a *join key* in `SessionMerger` Pass 2, so it can also drop a
+   live unregistered session to `concluded` (a missed needs-input), not just show a wrong display name.
+   Real fix: transcripts carry their own `cwd` field — read it. See §Dedup & merge — gap analysis (D1).
 
 ## Boundaries (hard invariants — see SPEC §8)
 - **Read-only on `~/.claude`** — never write/mutate it.
@@ -105,6 +107,97 @@ tab via Apple Events + activate desktop) · calm DND-aware notifications · `bui
    SwiftUI footprint; add an `.icns` app icon (build.sh TODO); adopt Swift 6 language mode.
 6. **Breadth (deliberately out of v0):** Xcode / Desktop-Cowork session sources (so-agentbar reads these);
    the `claude-code-sessions` metadata is also a richer desktop-session source (cwd/model/activity).
+
+## Dedup & merge — gap analysis (2026-06-18)
+
+*Post-v0 review of the dedup/merge pipeline (`SessionMerger` + `SessionStore.gatherTranscripts`),
+grounded in the source **and** this machine's live `~/.claude` (Claude CLI v2.1.170). Two real-data
+findings reframe the rest:*
+
+- **Registry files carry no `status` field** on the current CLI — real `~/.claude/sessions/<pid>.json`
+  keys are `[cwd, entrypoint, kind, peerProtocol, pid, procStart, sessionId, startedAt, version]`. The
+  `busy`/`waiting`/`idle` branch of `deriveStatus` is therefore **dead in practice**; every session falls
+  through to the transcript heuristic + liveness. (Sharpens gotcha #6 — it's the *current* CLI, not just
+  the old desktop app, that omits `status`.)
+- **Transcript records carry exact `cwd`, `sessionId`, `timestamp`** — the `TranscriptReader` header
+  comment ("sessionId and cwd are not carried in the transcript body") is wrong for current Claude, which
+  makes the top fix (D1) a few lines.
+
+### Findings (severity-ordered; line refs into `Sources/CPerchCore/`)
+
+- **D1 · `decodeProjectDir` is lossy — it breaks the cwd join, not just display.** `[High]`
+  `decodeProjectDir` (`"/" + split("-").joined("/")`, SessionStore.swift:160) can't tell a `/`-derived `-`
+  from a literal `-`. Real dirs mis-decode: `-Users-vedant-…-claude-toolbar-mac` → `…/claude/toolbar/mac`
+  (display "mac"); `…-Auto-UI-AB-Testing` → "Testing". Nearly every project here is hyphenated → pervasive.
+  The mangled cwd lands in `TranscriptSignal.cwd` (SessionStore.swift:143) and is a **join key** in Pass 2
+  (`$0.cwd == cwd`, SessionMerger.swift:69): a live *unregistered* session in a hyphenated dir gets `lsof`
+  cwd `…/claude-toolbar-mac` vs signal cwd `…/claude/toolbar/mac` → no match → never binds → shown
+  **concluded while running**, no needs-input fired. Gotcha #7 understates this.
+  *Fix:* return the last record's own `cwd` from `TranscriptReader`; retire the decode (keep as fallback).
+
+- **D2 · the merge's primary status signal is absent on the current CLI.** `[High]`
+  `deriveStatus` trusts `registryStatus` first (SessionMerger.swift:114-121); real files have none → all
+  hit `default:` → transcript heuristic (`:127-134`). This *amplifies* D1/D3: liveness (the pid bridge) is
+  then the only thing separating `concluded` from `running`/`needsInput`. The tests/fixtures all set
+  `status:"busy"/"waiting"` — a path that **doesn't run on real data**; the heuristic path that does is
+  thinly tested and `stalledThreshold = 120s` is unvalidated. *Fix:* `status:nil` fixtures mirroring
+  v2.1.170; broaden heuristic tests; validate 120s on real sessions.
+
+- **D3 · pid reuse / stale registry → misattributed liveness + wrong-window jump.** `[High]`
+  Pass 1 binds on any live pid found in the registry (SessionMerger.swift:53); `RegistryReader` does no
+  liveness check (reads every `<pid>.json`). macOS recycles PIDs: session A (pid 4242) crashes leaving
+  `4242.json`; the OS reassigns 4242 to another genuine-claude proc (e.g. `claude -p …`, kept by
+  `isGenuineClaudeSession`) that doesn't re-register → A shown alive, host resolved from 4242's *new* tty →
+  **jump focuses the wrong tab**. *Fix:* the registry already carries `procStart`/`startedAt` (the DTO
+  drops them) — capture the live process start time (extra `ps` column) and bind only if it matches
+  `procStart`. Interim: skip the bind when `p.cwd` ≠ `entry.cwd`.
+
+- **D4 · exact-string cwd matching is brittle** (beyond D1). `[Med]` No normalization at
+  SessionMerger.swift:69: trailing slash, case, dot-encoding (`.`→`-`?), symlink physical-vs-logical
+  (`lsof` resolves). *Fix:* normalize both sides (`standardizedFileURL.resolvingSymlinksInPath`, strip
+  trailing `/`); prefer joining on `sessionId` over cwd.
+
+- **D5 · `registryById` tie-break is lexical, not recency/liveness.** `[Med]` On a duplicate `sessionId`
+  the `uniquingKeysWith:{_,new in new}` (SessionMerger.swift:40) over `names.sorted()`
+  (RegistryReader.swift:43) keeps the lexicographically-last *filename* → arbitrary; the `Session` then
+  uses its possibly-stale cwd/kind. Comments calling it "more recently captured" mislead. *Fix:* prefer the
+  live-pid entry, else newest `startedAt`.
+
+- **D6 · `lastActivity` uses file mtime, not the record `timestamp`.** `[Med]`
+  TranscriptReader.swift:52,142 uses `contentModificationDate`; records carry a precise `timestamp`. mtime
+  is bumpable by Spotlight/backup/editor and drives stalled-threshold + sort + retention. *Fix:* parse the
+  last record's `timestamp`; mtime only as fallback.
+
+- **D7 · Pass 2 N:N pairing is arbitrary.** `[Low]` The "newest-process-first" comment
+  (SessionMerger.swift:61-63) isn't implemented (`unregistered` is ps-order; no start time captured).
+  `procStart` (D3) enables deterministic pairing.
+
+- **D8 · startup race.** `[Low]` Process-only sessions are invisible until a registry/transcript lands —
+  `allIds` is registry+transcript keys only (SessionMerger.swift:76). Known limitation.
+
+- **D9 · future double-listing (desktop deep-link).** `[Med, forward-looking]` When the desktop source
+  lands (fast-follow #2) the same conversation exists under a CLI `sessionId` and a desktop `local_…` id →
+  lists **twice**. The spine needs a `cliSessionId ↔ desktop sessionId` alias before that ships.
+
+- **D10 · dead code / test-reality gap.** `[trivia]` `transcriptsById`'s `uniquingKeysWith`
+  (SessionMerger.swift:38) never collides (`gatherTranscripts` dedups by sessionId upstream).
+
+### What's solid (calibration)
+Universe = `Set` of `sessionId` ⇒ the roster *structurally cannot* show an id twice. Pass 2's sequential
+mutation + inner re-check correctly stop two processes claiming one transcript. Registry-wins layering in
+`gatherTranscripts` and skip-malformed readers are the right instincts.
+
+### Suggested fix order
+| # | Fix | Severity | Effort |
+|---|-----|----------|--------|
+| D1 | Read transcript's own `cwd`; retire lossy decode | High | Low |
+| D3 | Validate pid bridge via `procStart` (cwd cross-check interim) | High | Med |
+| D2 | `status:nil` fixtures + validate `stalledThreshold` | High | Low–Med |
+| D6 | Use record `timestamp` for `lastActivity` | Med | Low |
+| D4/D5 | Normalize cwd; tie-break registry by liveness/`startedAt` | Med | Low |
+| D9 | Design `sessionId`-alias map before the desktop source | Med | — |
+
+**D1–D3 are carried into a companion implementation spec** — see [docs/specs/dedup-hardening-v0.1.md](specs/dedup-hardening-v0.1.md).
 
 ## Verifying any change
 `swift build` green · **`./scripts/test.sh`** green (add tests for new `CPerchCore` logic — it's pure

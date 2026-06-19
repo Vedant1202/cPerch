@@ -13,6 +13,8 @@ import Foundation
 // testable without a live machine (SPEC §6 — DI'd FS/process where it aids testing):
 //   • `listProcesses` yields the raw `ps -Ao pid,ppid,tty,%cpu,command` text.
 //   • `resolveCwd` maps a pid → its cwd (production: `lsof -a -p <pid> -d cwd`).
+//   • `resolveStartTime` maps a pid → its start instant for the D3 PID-reuse guard
+//     (production: `ps -o etime= -p <pid>`, parsed timezone-free via `parseElapsed`).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Scans the process table for live `claude` sessions → `[ProcessRecord]`.
@@ -27,18 +29,24 @@ public struct ProcessScanner {
 
     private let listProcesses: ProcessListing
     private let resolveCwd: (Int) -> String?
+    private let resolveStartTime: (Int) -> Date?
 
-    /// Inject a process source (and optionally a cwd resolver) — used by tests.
+    /// Inject a process source (and optionally cwd / start-time resolvers) — used by
+    /// tests so nothing shells out. `resolveStartTime` feeds the D3 PID-reuse guard.
     public init(listProcesses: @escaping ProcessListing,
-                resolveCwd: @escaping (Int) -> String? = { _ in nil }) {
+                resolveCwd: @escaping (Int) -> String? = { _ in nil },
+                resolveStartTime: @escaping (Int) -> Date? = { _ in nil }) {
         self.listProcesses = listProcesses
         self.resolveCwd = resolveCwd
+        self.resolveStartTime = resolveStartTime
     }
 
-    /// Production default: shell out to `ps` for the table and `lsof` per-pid for cwd.
+    /// Production default: shell out to `ps` for the table, `lsof` per-pid for cwd, and
+    /// `ps -o etime=` per-pid for the start instant (small N — live claude pids only).
     public init() {
         self.listProcesses = { try ProcessScanner.runPS() }
         self.resolveCwd = { ProcessScanner.lsofCwd(pid: $0) }
+        self.resolveStartTime = { ProcessScanner.psStartTime(pid: $0) }
     }
 
     /// Scan → genuine `claude` session records. On a process-listing failure returns
@@ -47,7 +55,8 @@ public struct ProcessScanner {
         guard let raw = try? listProcesses() else { return [] }
         return ProcessScanner.parse(raw).map { row in
             ProcessRecord(pid: row.pid, ppid: row.ppid, tty: row.tty,
-                          cwd: resolveCwd(row.pid), cpu: row.cpu)
+                          cwd: resolveCwd(row.pid), cpu: row.cpu,
+                          startTime: resolveStartTime(row.pid))
         }
     }
 
@@ -118,6 +127,50 @@ public struct ProcessScanner {
         return "tty" + field
     }
 
+    // MARK: - Start-time parsing (D3 PID-reuse guard)
+
+    /// Parse a `ps -o etime=` elapsed-time string into seconds. `etime` is timezone-free
+    /// (elapsed wall-clock since the process started) in one of three shapes:
+    ///   `mm:ss`        (e.g. "19:15")
+    ///   `hh:mm:ss`     (e.g. "01:02:03")
+    ///   `dd-hh:mm:ss`  (e.g. "2-03:04:05")
+    /// Returns the elapsed seconds, or `nil` for any other/garbled shape (best-effort —
+    /// the caller treats nil as "start unknown", which the merger trusts rather than
+    /// regressing). Pure and side-effect-free so it's unit-testable on sample strings.
+    static func parseElapsed(_ raw: String) -> TimeInterval? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+
+        // Split off an optional leading `dd-` day count.
+        var days = 0
+        var clock = Substring(trimmed)
+        if let dash = clock.firstIndex(of: "-") {
+            guard let d = Int(clock[clock.startIndex..<dash]), d >= 0 else { return nil }
+            days = d
+            clock = clock[clock.index(after: dash)...]
+        }
+
+        // The remainder is mm:ss or hh:mm:ss.
+        let parts = clock.split(separator: ":", omittingEmptySubsequences: false)
+        guard parts.count == 2 || parts.count == 3 else { return nil }
+
+        var values: [Int] = []
+        for p in parts {
+            guard !p.isEmpty, let v = Int(p), v >= 0 else { return nil }
+            values.append(v)
+        }
+
+        let hours: Int, minutes: Int, seconds: Int
+        if values.count == 3 {
+            (hours, minutes, seconds) = (values[0], values[1], values[2])
+        } else {
+            (hours, minutes, seconds) = (0, values[0], values[1])
+        }
+        guard minutes < 60, seconds < 60 else { return nil }
+
+        return TimeInterval(days * 86_400 + hours * 3_600 + minutes * 60 + seconds)
+    }
+
     // MARK: - Filtering
 
     /// True iff `command` is a genuine `claude` Code session — i.e. the claude-code
@@ -171,6 +224,18 @@ public struct ProcessScanner {
     /// `ps -Ao pid,ppid,tty,%cpu,command` — the full process table.
     static func runPS() throws -> String {
         try runCommand("/bin/ps", ["-Ao", "pid,ppid,tty,%cpu,command"])
+    }
+
+    /// `ps -o etime= -p <pid>` → the process's start instant, computed as `now − etime`
+    /// (D3 PID-reuse guard). `etime` is elapsed wall-clock and therefore timezone-free
+    /// (unlike `lstart`/registry `procStart`, which are TZ-ambiguous). Returns nil if ps
+    /// fails, the process is gone, or the elapsed string can't be parsed — best-effort,
+    /// the merger trusts an unknown start rather than regressing.
+    static func psStartTime(pid: Int, now: Date = Date()) -> Date? {
+        guard let out = try? runCommand("/bin/ps", ["-o", "etime=", "-p", String(pid)]),
+              let elapsed = parseElapsed(out)
+        else { return nil }
+        return now.addingTimeInterval(-elapsed)
     }
 
     /// `lsof -a -p <pid> -d cwd` → the process's cwd (the trailing NAME field of the

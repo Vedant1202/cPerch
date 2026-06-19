@@ -81,4 +81,36 @@ struct TranscriptReaderTests {
                                  sessionId: "x", cwd: "/x")
         #expect(signal == nil)
     }
+
+    // MARK: - D1 · transcript-owned cwd (DD-1)
+
+    // AC-D1.1 — the records in with-cwd.jsonl carry an explicit top-level `cwd`
+    // (a hyphenated project dir). The returned signal must use the RECORD's cwd,
+    // not the (lossy, caller-supplied) `cwd` argument. This is the join-key fix:
+    // the recent-files path passes a decodeProjectDir-mangled cwd, and the reader
+    // must override it with the transcript's own exact value.
+    @Test func recordCwdOverridesPassedInCwd() throws {
+        let url = fixtureURL("with-cwd")
+        #expect(FileManager.default.fileExists(atPath: url.path), "missing fixture with-cwd.jsonl")
+        let reader = TranscriptReader()
+        // Pass a deliberately WRONG/mangled cwd to prove the record's cwd wins.
+        let signal = reader.read(path: url.path,
+                                 sessionId: "sid-with-cwd",
+                                 cwd: "/Users/USER/Projects/my/hyphen/project")  // mangled
+        let s = try #require(signal)
+        #expect(s.cwd == "/Users/USER/Projects/my-hyphen-project")  // the record's exact cwd
+    }
+
+    // AC-D1.4 — no-cwd.jsonl has no top-level `cwd` on any record. The reader must
+    // fall back to the passed-in `cwd` argument and not crash / not return nil.
+    @Test func missingRecordCwdFallsBackToArgument() throws {
+        let url = fixtureURL("no-cwd")
+        #expect(FileManager.default.fileExists(atPath: url.path), "missing fixture no-cwd.jsonl")
+        let reader = TranscriptReader()
+        let fallback = "/Users/USER/Projects/fallback-dir"
+        let signal = reader.read(path: url.path, sessionId: "sid-no-cwd", cwd: fallback)
+        let s = try #require(signal)
+        #expect(s.cwd == fallback)          // fell back to the argument
+        #expect(s.lastRole == "assistant")  // still parsed normally, no crash
+    }
 }
