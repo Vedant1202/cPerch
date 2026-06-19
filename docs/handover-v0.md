@@ -197,7 +197,31 @@ mutation + inner re-check correctly stop two processes claiming one transcript. 
 | D4/D5 | Normalize cwd; tie-break registry by liveness/`startedAt` | Med | Low |
 | D9 | Design `sessionId`-alias map before the desktop source | Med | — |
 
-**D1–D3 are carried into a companion implementation spec** — see [docs/specs/dedup-hardening-v0.1.md](specs/dedup-hardening-v0.1.md).
+**Status (2026-06-18):** D1/D2/D3 **shipped** on branch `dedup-hardening-v0.1`
+([spec](specs/dedup-hardening-v0.1.md)) — verified live (`--print`: hyphenated project names now render
+correctly; the PID-reuse guard and status-heuristic coverage are in). Three more findings then surfaced
+from **live toolbar testing**:
+
+- **L1 · status: "waiting on you" vs "done".** `[High]` A live session that ended its turn on an assistant
+  `end_turn` shows `concluded`/"all quiet" even when the agent asked *you* a question — `deriveStatus` maps
+  every `end_turn` → concluded (SessionMerger.swift:130-134). The headline status-accuracy gap (CLAUDE.md's
+  "hardest open problem").
+- **L2 · same-project rows are visually identical.** `[Med]` Two `claude-toolbar-mac` rows (correct dedup of
+  two real sessions) can't be told apart — `displayName` is only the cwd basename; the long-intended AI title
+  (Models.swift "or AI-generated title") was never built, though `ai-title` records exist in the transcript.
+- **L3 · missing message preview.** `[Low]` `latestMessage` is nil when the transcript tail has no assistant
+  text block.
+
+**Update (2026-06-18): v0.2 shipped.** L1, L2, L3, D4, D5, D6, D9 are all implemented on
+`dedup-hardening-v0.1` (spec [roster-and-merge-quality-v0.2.md](specs/roster-and-merge-quality-v0.2.md),
+plan [tasks/roster-merge-quality-plan.md](../tasks/roster-merge-quality-plan.md)) — **108 tests**, built
+via the same contract-first 3-track fan-out (M/T/U). Live-verified: AI titles (L2) extract correctly
+(37/37 ai-titled transcripts keep their title within the 256 KB tail — no tail-window gap); D6's
+record-`timestamp` activity gives sharper retention than mtime. L1's word-boundary `looksLikeAwaitingUser`
+is unit-tested (a live `end_turn`+question wasn't forced — tune the phrase set on real data if false
+positives/negatives surface). **Deferred:** L1 opt-in `Stop`/`Notification` hooks (Phase 4 — writes
+`~/.claude/settings.json`, needs explicit go-ahead). Still open: **D7** (Pass-2 N:N pairing), **D8**
+(startup race), **D10** (dead defensive code / test-reality gap).
 
 ## Verifying any change
 `swift build` green · **`./scripts/test.sh`** green (add tests for new `CPerchCore` logic — it's pure

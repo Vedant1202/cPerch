@@ -11,13 +11,16 @@ import CPerchCore
 final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let store: SessionProviding
+    private let preferences: PreferencesStore
     private let popover = NSPopover()
     private let hosting: NSHostingController<RosterView>
     private let notifier = Notifier()
     private var previousSessions: [Session] = []
+    private lazy var settingsWindow = SettingsWindowController(store: preferences)
 
-    init(store: SessionProviding) {
+    init(store: SessionProviding, preferences: PreferencesStore) {
         self.store = store
+        self.preferences = preferences
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         hosting = NSHostingController(rootView: RosterView(sessions: store.sessions))
         super.init()
@@ -34,6 +37,10 @@ final class MenuBarController: NSObject {
 
         store.onChange = { [weak self] in
             DispatchQueue.main.async { self?.refresh() }
+        }
+        // A settings change (e.g. switching to grouped view) re-renders the open roster.
+        preferences.onChange = { [weak self] in
+            DispatchQueue.main.async { self?.updateRoster() }
         }
         store.start()
         refresh()
@@ -56,8 +63,10 @@ final class MenuBarController: NSObject {
             image.isTemplate = false
             button.image = image
         }
-        // Calm needs-input banners on →needsInput transitions (coalesced; DND-aware via macOS).
-        notifier.reconcile(previous: previousSessions, current: current)
+        // Calm needs-input banners on →needsInput transitions (coalesced). DND mode +
+        // notification life come from preferences; Focus suppression stays macOS's job.
+        notifier.reconcile(previous: previousSessions, current: current,
+                           preferences: preferences.preferences)
         previousSessions = current
         // Keep the open roster in sync with live session changes.
         updateRoster()
@@ -70,9 +79,28 @@ final class MenuBarController: NSObject {
     private func makeRoster() -> RosterView {
         RosterView(
             sessions: store.sessions,
+            maxListHeight: currentMaxListHeight(),
+            viewMode: preferences.preferences.viewMode,
             onJump: { [weak self] session in self?.jump(to: session) },
+            onSettings: { [weak self] in self?.openSettings() },
             onQuit: { NSApplication.shared.terminate(nil) }
         )
+    }
+
+    /// Open the Settings window (closing the transient popover first so it doesn't vanish
+    /// the moment focus moves to the new window).
+    private func openSettings() {
+        popover.performClose(nil)
+        settingsWindow.show()
+    }
+
+    /// The list's max height, responsive to the active screen so the popover never
+    /// covers the whole display: ~60% of the screen's visible height, floored so it
+    /// stays usable on small screens and bounded so it always leaves a margin.
+    private func currentMaxListHeight() -> CGFloat {
+        let screen = statusItem.button?.window?.screen ?? NSScreen.main
+        let visibleH = screen?.visibleFrame.height ?? 900
+        return min(max(visibleH * 0.6, 220), visibleH - 140)
     }
 
     // MARK: - Popover
@@ -88,8 +116,11 @@ final class MenuBarController: NSObject {
     private func showPopover() {
         guard let button = statusItem.button else { return }
         updateRoster()
-        // Size the popover to the SwiftUI content (RosterView is a fixed 340pt wide).
-        popover.contentSize = hosting.sizeThatFits(in: NSSize(width: 340, height: 600))
+        // Size the popover to the SwiftUI content (RosterView is a fixed 340pt wide); the
+        // scrollable list is capped at a screen-relative height so a long roster scrolls
+        // instead of growing past the display.
+        let maxH = currentMaxListHeight()
+        popover.contentSize = hosting.sizeThatFits(in: NSSize(width: 340, height: maxH + 120))
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
     }

@@ -51,8 +51,14 @@ public struct TranscriptReader: Sendable {
             lastRole: message?["role"] as? String,
             lastStopReason: message?["stop_reason"] as? String,
             pendingToolUses: pending,
-            lastText: latestAssistantText(in: real),
-            lastActivity: modificationDate(of: url)
+            lastText: previewText(in: real),
+            // D6 / DD-D6: the last real record's own `timestamp` is the precise activity
+            // instant; it's robust to non-Claude touches (editor open, backup) that move
+            // the file's mtime. Fall back to mtime when no record carries a parseable one.
+            lastActivity: lastRecordActivity(in: real) ?? modificationDate(of: url),
+            // L2 / DD-L2: the AI-generated title rides as a separate `ai-title` meta
+            // record, which realRecords() filters out — so scan the raw tail for it.
+            aiTitle: aiTitle(in: tail)
         )
     }
 
@@ -139,6 +145,19 @@ public struct TranscriptReader: Sendable {
         return used.subtracting(resolved).count
     }
 
+    /// The roster preview text, with the L3 / DD-L3 fallback chain: the latest
+    /// assistant text block (the normal case) → the latest user text (e.g. the turn
+    /// ended on a pure tool_use with no assistant prose) → a `Running <tool>…` summary
+    /// of the last pending tool (e.g. the agent is mid-tool with no text at all) →
+    /// nil only as a last resort (RosterView already hides empty rows). The fallback
+    /// keeps a row from rendering blank when there's no assistant prose to show.
+    private func previewText(in real: [[String: Any]]) -> String? {
+        if let assistant = latestAssistantText(in: real) { return assistant }
+        if let user = latestUserText(in: real) { return user }
+        if let tool = lastPendingToolName(in: real) { return "Running \(tool)…" }
+        return nil
+    }
+
     /// The most recent non-empty assistant text block — the inline preview.
     private func latestAssistantText(in real: [[String: Any]]) -> String? {
         for object in real.reversed() {
@@ -154,8 +173,107 @@ public struct TranscriptReader: Sendable {
         return nil
     }
 
+    /// The most recent non-empty user text block (L3 fallback). User content can be a
+    /// plain string or the structured content-block array; handle both. A user turn
+    /// often also carries tool_result blocks — we only want the human's typed text.
+    private func latestUserText(in real: [[String: Any]]) -> String? {
+        for object in real.reversed() {
+            guard let message = object["message"] as? [String: Any],
+                  (message["role"] as? String) == "user" else { continue }
+            // Older/simple shape: content is a bare string.
+            if let text = message["content"] as? String, !text.isEmpty { return text }
+            for block in (message["content"] as? [[String: Any]]) ?? [] {
+                if (block["type"] as? String) == "text",
+                   let text = block["text"] as? String, !text.isEmpty {
+                    return text
+                }
+            }
+        }
+        return nil
+    }
+
+    /// The `name` of the last pending tool_use (L3 fallback): scan all tool_use ids
+    /// that have no matching tool_result, then return the name of the latest such call
+    /// in the tail. Used to render `Running <tool>…` when there's no prose at all.
+    private func lastPendingToolName(in real: [[String: Any]]) -> String? {
+        var resolved = Set<String>()
+        for object in real {
+            for block in contentBlocks(object) where (block["type"] as? String) == "tool_result" {
+                if let id = block["tool_use_id"] as? String { resolved.insert(id) }
+            }
+        }
+        for object in real.reversed() {
+            for block in contentBlocks(object).reversed() where (block["type"] as? String) == "tool_use" {
+                guard let id = block["id"] as? String, !resolved.contains(id) else { continue }
+                if let name = block["name"] as? String, !name.isEmpty { return name }
+            }
+        }
+        return nil
+    }
+
+    /// The AI-generated session title (L2 / DD-L2). The title rides as a meta record
+    /// `{"type":"ai-title","aiTitle":"…","sessionId":"…"}`, which `realRecords` drops,
+    /// so we scan the RAW tail lines here. The title can be regenerated as the
+    /// conversation evolves, so we take the LAST `ai-title` record in the tail. Returns
+    /// nil when no such record is present (the basename fallback then applies upstream).
+    private func aiTitle(in tail: String) -> String? {
+        var title: String? = nil
+        for line in tail.split(separator: "\n", omittingEmptySubsequences: true) {
+            guard let data = line.data(using: .utf8),
+                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  (object["type"] as? String) == "ai-title"
+            else { continue }
+            if let value = object["aiTitle"] as? String, !value.isEmpty {
+                title = value   // keep scanning; the last one wins
+            }
+        }
+        return title
+    }
+
     private func modificationDate(of url: URL) -> Date {
         (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
             ?? .distantPast
     }
+
+    // MARK: - D6 · record timestamp
+
+    /// The parsed top-level `timestamp` of the last real record that carries one
+    /// (DD-D6). Real Claude records stamp each turn with an ISO-8601 instant; using
+    /// it makes `lastActivity` precise and immune to non-Claude file touches. Returns
+    /// nil when no real record has a parseable `timestamp`, so the caller can fall
+    /// back to the file's mtime (the prior behavior).
+    private func lastRecordActivity(in real: [[String: Any]]) -> Date? {
+        for object in real.reversed() {
+            if let raw = object["timestamp"] as? String,
+               let date = TranscriptReader.parseTimestamp(raw) {
+                return date
+            }
+        }
+        return nil
+    }
+
+    /// Parse an ISO-8601 timestamp as written in Claude transcripts. The wild data
+    /// uses fractional seconds with a `Z` (e.g. `2026-06-18T20:29:53.698Z`), but a
+    /// single `ISO8601DateFormatter` can't accept BOTH fractional and whole-second
+    /// forms — `.withFractionalSeconds` makes the fraction mandatory. So we try the
+    /// fractional formatter first, then the plain one (which also handles numeric
+    /// offsets like `+02:00`). Returns nil on anything unparseable (garbage, empty).
+    public static func parseTimestamp(_ s: String) -> Date? {
+        if let date = iso8601Fractional.date(from: s) { return date }
+        return iso8601Plain.date(from: s)
+    }
+
+    /// ISO-8601 with fractional seconds (the common Claude-transcript shape).
+    private static let iso8601Fractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    /// ISO-8601 without fractional seconds; also accepts numeric offsets (`+02:00`).
+    private static let iso8601Plain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
 }

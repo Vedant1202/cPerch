@@ -8,7 +8,8 @@ import Foundation
 // Post-v0 (dedup-hardening Phase 0): extended ADDITIVELY — `ProcessRecord.startTime`
 // and `RegistryEntry.startedAt` are new optional, nil-defaulted fields for the D3
 // PID-reuse guard, so existing initializer call sites compile unchanged.
-// See docs/specs/dedup-hardening-v0.1.md.
+// roster-and-merge-quality Phase 0 adds `TranscriptSignal.aiTitle` (L2), same additive rule.
+// See docs/specs/dedup-hardening-v0.1.md and docs/specs/roster-and-merge-quality-v0.2.md.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// From the OS process table — ProcessScanner (P1-A).
@@ -53,11 +54,13 @@ public struct TranscriptSignal: Sendable, Equatable {
     public let pendingToolUses: Int      // tool_use records without a matching tool_result
     public let lastText: String?         // latest assistant text — preview
     public let lastActivity: Date        // transcript mtime / last record timestamp
+    public let aiTitle: String?          // AI-generated session title (transcript `ai-title` record) — L2; nil if none
 
     public init(sessionId: String, cwd: String, lastRole: String?, lastStopReason: String?,
-                pendingToolUses: Int, lastText: String?, lastActivity: Date) {
+                pendingToolUses: Int, lastText: String?, lastActivity: Date, aiTitle: String? = nil) {
         self.sessionId = sessionId; self.cwd = cwd; self.lastRole = lastRole
         self.lastStopReason = lastStopReason; self.pendingToolUses = pendingToolUses
         self.lastText = lastText; self.lastActivity = lastActivity
+        self.aiTitle = aiTitle
     }
 }

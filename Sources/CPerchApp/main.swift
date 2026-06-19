@@ -38,8 +38,11 @@ if CommandLine.arguments.contains("--print") {
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
+let prefs = PreferencesStore()
+prefs.applyTheme()   // apply the saved appearance at launch
+
 let store = SessionStore()
-let controller = MenuBarController(store: store)
+let controller = MenuBarController(store: store, preferences: prefs)
 _ = controller   // retained for the app's lifetime
 
 app.run()

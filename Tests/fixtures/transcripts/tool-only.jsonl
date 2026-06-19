@@ -1,0 +1,2 @@
+{"type":"user","cwd":"/Users/USER/Projects/demo","sessionId":"00000000-0000-4000-8000-0000000000c1","message":{"role":"user","content":[{"type":"text","text":"Find every TODO in the repo."}]}}
+{"type":"assistant","cwd":"/Users/USER/Projects/demo","sessionId":"00000000-0000-4000-8000-0000000000c1","message":{"role":"assistant","stop_reason":"tool_use","content":[{"type":"tool_use","id":"toolu_only_1","name":"Grep","input":{"pattern":"TODO"}}]}}

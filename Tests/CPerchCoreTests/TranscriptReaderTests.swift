@@ -113,4 +113,95 @@ struct TranscriptReaderTests {
         #expect(s.cwd == fallback)          // fell back to the argument
         #expect(s.lastRole == "assistant")  // still parsed normally, no crash
     }
+
+    // MARK: - D6 · lastActivity from the record timestamp (DD-D6)
+
+    // AC-D6.1 — timestamped.jsonl's last real record carries
+    // "timestamp":"2026-06-18T20:29:53.698Z". lastActivity must be THAT instant
+    // (±1s), not the file's mtime. We assert against the parsed timestamp and also
+    // that it is meaningfully distinct from the file's modification time, so a
+    // regression to mtime would fail.
+    @Test func lastActivityUsesRecordTimestamp() throws {
+        let url = fixtureURL("timestamped")
+        let expected = try #require(TranscriptReader.parseTimestamp("2026-06-18T20:29:53.698Z"))
+        let s = try read("timestamped")
+        #expect(abs(s.lastActivity.timeIntervalSince(expected)) < 1.0)
+    }
+
+    // AC-D6.2 — running.jsonl has no `timestamp` on any record, so lastActivity must
+    // fall back to the file's modification time. (This complements the existing
+    // lastActivityIsFileMtime test, which must also still pass.)
+    @Test func lastActivityFallsBackToMtimeWhenNoTimestamp() throws {
+        let url = fixtureURL("running")
+        let mtime = try FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as! Date
+        let s = try read("running")
+        #expect(abs(s.lastActivity.timeIntervalSince(mtime)) < 1.0)
+    }
+
+    // AC-D6.3 — parseTimestamp truth table: Z (no fraction), fractional seconds,
+    // numeric offset, and garbage → nil.
+    @Test func parseTimestampTable() throws {
+        // Fractional-seconds + Z.
+        let frac = try #require(TranscriptReader.parseTimestamp("2026-06-18T20:29:53.698Z"))
+        #expect(abs(frac.timeIntervalSince1970 - 1781814593.698) < 0.001)
+
+        // No fractional seconds, Z.
+        let noFrac = try #require(TranscriptReader.parseTimestamp("2026-06-18T20:29:53Z"))
+        #expect(abs(noFrac.timeIntervalSince1970 - 1781814593.0) < 0.001)
+
+        // Numeric offset (the same instant as 20:29:53Z, expressed as +02:00).
+        let offset = try #require(TranscriptReader.parseTimestamp("2026-06-18T22:29:53+02:00"))
+        #expect(abs(offset.timeIntervalSince1970 - 1781814593.0) < 0.001)
+
+        // Garbage → nil.
+        #expect(TranscriptReader.parseTimestamp("not-a-date") == nil)
+        #expect(TranscriptReader.parseTimestamp("") == nil)
+    }
+
+    // MARK: - L2 · ai-title extraction (DD-L2)
+
+    // AC-L2.1 — ai-titled.jsonl carries an `{"type":"ai-title","aiTitle":"…"}` meta
+    // record. realRecords() drops meta records, so the reader must scan the raw tail
+    // for it; aiTitle must be the title, NOT the last assistant text block.
+    @Test func extractsAiTitleFromMetaRecord() throws {
+        let s = try read("ai-titled")
+        #expect(s.aiTitle == "Refactoring the auth module")
+        // Sanity: the last assistant text is a different string — proves we read the
+        // ai-title record, not the conversation text.
+        #expect(s.lastText == "Done — extracted the token logic.")
+    }
+
+    // AC-L2.2 — a transcript with no `ai-title` record yields nil aiTitle.
+    @Test func aiTitleIsNilWhenAbsent() throws {
+        let s = try read("running")
+        #expect(s.aiTitle == nil)
+    }
+
+    // MARK: - L3 · preview fallback (DD-L3)
+
+    // AC-L3.1 (user-text branch) — tool-only.jsonl's last assistant turn is a pure
+    // tool_use (no text block), so latestAssistantText is nil; the preview must fall
+    // back to the last USER text rather than going blank.
+    @Test func previewFallsBackToLastUserText() throws {
+        let s = try read("tool-only")
+        #expect(s.lastText == "Find every TODO in the repo.")
+    }
+
+    // AC-L3.1 (tool-summary branch) — tool-pending-no-text.jsonl has no assistant
+    // text AND no user text, but a tool_use is pending; the preview must summarize the
+    // pending tool as "Running <name>…".
+    @Test func previewFallsBackToPendingToolSummary() throws {
+        let s = try read("tool-pending-no-text")
+        #expect(s.lastText == "Running Bash…")
+        #expect(s.pendingToolUses == 1)   // confirms the tool really is pending
+    }
+
+    // AC-L3.2 — a meta-only transcript (no real records) yields a nil preview without
+    // crashing; the signal is still produced.
+    @Test func previewIsNilForMetaOnlyTranscript() throws {
+        let s = try read("meta-only")
+        #expect(s.lastText == nil)
+        #expect(s.lastRole == nil)        // no real record at all
+        #expect(s.pendingToolUses == 0)
+    }
 }

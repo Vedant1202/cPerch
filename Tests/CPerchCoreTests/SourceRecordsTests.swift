@@ -10,7 +10,7 @@ import Foundation
 //   • the pre-Phase-0 initializer call shapes still compile (backward compatible), and
 //   • the new fields default to nil and round-trip when supplied.
 // See docs/specs/dedup-hardening-v0.1.md (DD-6).
-@Suite("SourceRecords — additive contract (startTime / startedAt)")
+@Suite("SourceRecords — additive contract (startTime / startedAt / aiTitle)")
 struct SourceRecordsContractTests {
 
     private let instant = Date(timeIntervalSince1970: 1_781_750_000)
@@ -39,5 +39,22 @@ struct SourceRecordsContractTests {
         let e = RegistryEntry(pid: 1, sessionId: "s", cwd: "/c",
                               status: nil, kind: nil, version: nil, startedAt: instant)
         #expect(e.startedAt == instant)
+    }
+
+    // v0.2 (roster-and-merge-quality) Phase 0: TranscriptSignal gains an optional, nil-defaulted
+    // `aiTitle` for L2 (the AI-generated session title). Same additive contract.
+    @Test("TranscriptSignal: legacy init still compiles; aiTitle defaults to nil")
+    func transcriptAiTitleDefaultsNil() {
+        let s = TranscriptSignal(sessionId: "s", cwd: "/c", lastRole: nil, lastStopReason: nil,
+                                 pendingToolUses: 0, lastText: nil, lastActivity: instant)  // pre-v0.2 shape
+        #expect(s.aiTitle == nil)
+    }
+
+    @Test("TranscriptSignal: aiTitle round-trips when supplied")
+    func transcriptAiTitleRoundTrips() {
+        let s = TranscriptSignal(sessionId: "s", cwd: "/c", lastRole: nil, lastStopReason: nil,
+                                 pendingToolUses: 0, lastText: nil, lastActivity: instant,
+                                 aiTitle: "My Cool Title")
+        #expect(s.aiTitle == "My Cool Title")
     }
 }

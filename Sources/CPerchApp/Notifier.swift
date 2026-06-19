@@ -94,26 +94,50 @@ final class Notifier {
     /// the OS's job — we always `add`; macOS decides whether to surface it.
     func reconcile(previous: [Session],
                    current: [Session],
-                   notifyNewAgent: Bool = false) {
+                   notifyNewAgent: Bool = false,
+                   preferences: Preferences = .defaults) {
         let texts = Self.banners(previous: previous, current: current,
                                  notifyNewAgent: notifyNewAgent)
         guard !texts.isEmpty, let center else { return }   // no bundle → notifications no-op
-        Task { await post(texts, center: center) }
+        Task { await post(texts, center: center, preferences: preferences) }
     }
 
     /// Ensure authorization (once), then post each banner. Failures are swallowed:
     /// a denied permission or a post error must never disrupt the user's sessions.
-    private func post(_ texts: [String], center: UNUserNotificationCenter) async {
+    private func post(_ texts: [String], center: UNUserNotificationCenter,
+                      preferences: Preferences) async {
         await requestAuthorizationIfNeeded(center: center)
         for text in texts {
             let content = UNMutableNotificationContent()
             content.title = "cPerch"
             content.body = text
-            content.sound = .default
+            // DND mode: silent → no sound; notify-anyway → time-sensitive (best-effort
+            // Focus bypass — truly overriding DND needs the time-sensitive entitlement);
+            // system → default sound + level, letting macOS decide.
+            switch preferences.dndMode {
+            case .system:
+                content.sound = .default
+            case .notifyAnyway:
+                content.sound = .default
+                content.interruptionLevel = .timeSensitive
+            case .silentAlways:
+                content.sound = nil
+            }
             // nil trigger → deliver immediately.
-            let request = UNNotificationRequest(identifier: UUID().uuidString,
-                                                content: content, trigger: nil)
+            let id = UUID().uuidString
+            let request = UNNotificationRequest(identifier: id, content: content, trigger: nil)
             try? await center.add(request)
+
+            // Notification life: "timed" clears the delivered notification from Notification
+            // Center after N seconds; "persisted" leaves it until the user dismisses it. (macOS
+            // controls the on-screen banner duration itself; this governs the lingering copy.)
+            if preferences.notificationDismiss == .timed {
+                let seconds = preferences.notificationTimeoutSeconds
+                Task {
+                    try? await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
+                    center.removeDeliveredNotifications(withIdentifiers: [id])
+                }
+            }
         }
     }
 

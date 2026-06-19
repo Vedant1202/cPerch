@@ -42,6 +42,24 @@ public enum SessionMerger {
         return abs(pStart.timeIntervalSince(rStart)) <= tolerance
     }
 
+    /// Pick the winner between two registry entries that share a (canonical) sessionId
+    /// (D5). A duplicate happens when a crashed session's lingering `<pid>.json` coexists
+    /// with the live one, or when an alias collapses two source entries. Prefer the entry
+    /// whose pid is currently LIVE; if neither (or both) is live, prefer the newest
+    /// `startedAt` (now available from D3). A nil `startedAt` loses to any real instant,
+    /// and ties hold the incumbent (deterministic). Replaces the old lexical-filename
+    /// order, which could let a dead entry shadow the live one.
+    static func preferRegistryEntry(_ a: RegistryEntry, _ b: RegistryEntry,
+                                    livePids: Set<Int>) -> RegistryEntry {
+        let aLive = livePids.contains(a.pid)
+        let bLive = livePids.contains(b.pid)
+        if aLive != bLive { return aLive ? a : b }   // exactly one live → it wins
+        // Both or neither live → newest startedAt wins; nil sorts oldest; tie keeps `a`.
+        let aStart = a.startedAt ?? .distantPast
+        let bStart = b.startedAt ?? .distantPast
+        return bStart > aStart ? b : a
+    }
+
     /// Merge the three per-source record streams into unified sessions.
     ///
     /// - Parameters:
@@ -49,18 +67,40 @@ public enum SessionMerger {
     ///   - registry:    `~/.claude/sessions/*.json` entries (P1-B) — the pid→sessionId bridge.
     ///   - transcripts: per-session transcript signals (P1-C) — preview + activity + fallback status.
     ///   - now:         injected clock for deterministic freshness (defaults to `Date()`).
+    ///   - aliases:     optional sessionId-canonicalization map (D9 seam) — `cli → local_…`
+    ///                  once the desktop source lands. Default empty ⇒ no behavior change.
     /// - Returns: sessions keyed by `sessionId`, sorted needs-you-first then most-recent.
     public static func merge(processes: [ProcessRecord],
                              registry: [RegistryEntry],
                              transcripts: [TranscriptSignal],
-                             now: Date = Date()) -> [Session] {
+                             now: Date = Date(),
+                             aliases: [String: String] = [:]) -> [Session] {
 
-        // Index the inputs by their join keys. `last` wins on duplicate ids/pids so a
-        // later (more recently captured) record supersedes an earlier one.
-        let transcriptsById = Dictionary(transcripts.map { ($0.sessionId, $0) },
-                                         uniquingKeysWith: { _, new in new })
-        let registryById = Dictionary(registry.map { ($0.sessionId, $0) },
-                                      uniquingKeysWith: { _, new in new })
+        // The set of pids currently alive — used both as the liveness signal and, for D5,
+        // to break a duplicate-sessionId registry tie toward the entry that's actually live.
+        let livePids = Set(processes.map(\.pid))
+
+        // Index the inputs by their (canonical) join keys. SessionIds are canonicalized
+        // through `aliases` first (D9) so an aliased `cli`/`local_` pair collapses to one
+        // session. With empty aliases this is the identity — output is unchanged.
+        let transcriptsById = Dictionary(
+            transcripts.map { (canonicalSessionId($0.sessionId, aliases: aliases), $0) },
+            uniquingKeysWith: { _, new in new })   // later capture supersedes an earlier one
+
+        // Registry index (D5): on a duplicate sessionId, keep the entry whose pid is LIVE,
+        // else the one with the newest `startedAt`. Lexical filename order (the old
+        // `Dictionary(uniquingKeysWith: { _, new in new })` over `names.sorted()`) was
+        // arbitrary — a dead lingering `<pid>.json` could shadow the live one.
+        var registryById: [String: RegistryEntry] = [:]
+        for e in registry {
+            let key = canonicalSessionId(e.sessionId, aliases: aliases)
+            if let existing = registryById[key] {
+                registryById[key] = preferRegistryEntry(existing, e, livePids: livePids)
+            } else {
+                registryById[key] = e
+            }
+        }
+
         let registryByPid = Dictionary(registry.map { ($0.pid, $0) },
                                        uniquingKeysWith: { _, new in new })
 
@@ -79,7 +119,9 @@ public enum SessionMerger {
         for p in processes {
             if let entry = registryByPid[p.pid] {
                 if bindIsTrustworthy(process: p, entry: entry) {
-                    pidForSession[entry.sessionId] = p.pid
+                    // Canonicalize so the bind lands on the same key the session is built
+                    // under (D9) — an aliased entry must mark its canonical session alive.
+                    pidForSession[canonicalSessionId(entry.sessionId, aliases: aliases)] = p.pid
                 }
                 // else: confident PID-reuse mismatch → drop the bind, don't re-claim.
             } else {
@@ -91,13 +133,21 @@ public enum SessionMerger {
         // sharing its cwd that isn't already bound. Newest-process-first keeps the
         // assignment stable when several compete for the same directory (cwd collision —
         // a documented best-effort limitation: we attach liveness to the freshest session).
+        // The cwd compare is NORMALIZED on both sides (D4): `/tmp/x` vs `/private/tmp/x`,
+        // a trailing slash, or `.`/`..` no longer block a real match, while distinct dirs
+        // still don't collide. SessionIds are canonicalized (D9) to key `pidForSession`
+        // consistently with the registry pass and the session-build loop.
         let claimable = transcripts
-            .filter { pidForSession[$0.sessionId] == nil }   // not already bound via registry
+            .filter { pidForSession[canonicalSessionId($0.sessionId, aliases: aliases)] == nil }
             .sorted { $0.lastActivity > $1.lastActivity }
         for p in unregistered {
             guard let cwd = p.cwd else { continue }
-            if let match = claimable.first(where: { $0.cwd == cwd && pidForSession[$0.sessionId] == nil }) {
-                pidForSession[match.sessionId] = p.pid
+            let normCwd = normalizedPath(cwd)
+            if let match = claimable.first(where: {
+                normalizedPath($0.cwd) == normCwd
+                    && pidForSession[canonicalSessionId($0.sessionId, aliases: aliases)] == nil
+            }) {
+                pidForSession[canonicalSessionId(match.sessionId, aliases: aliases)] = p.pid
             }
         }
 
@@ -121,7 +171,7 @@ public enum SessionMerger {
             return Session(
                 id: id,
                 projectPath: cwd,
-                displayName: displayName(for: cwd),
+                displayName: sig?.aiTitle ?? displayName(for: cwd),   // L2: AI title wins, basename fallback
                 source: source,
                 status: status,
                 latestMessage: sig?.lastText,
@@ -159,9 +209,56 @@ public enum SessionMerger {
         if s.pendingToolUses > 0 { return stalled ? .needsInput : .running }
         switch s.lastStopReason {
         case "tool_use": return stalled ? .needsInput : .running
-        case "end_turn", "stop_sequence", "max_tokens": return .concluded
+        case "end_turn", "stop_sequence", "max_tokens":
+            // The turn finished cleanly — but if the assistant's parting text was an
+            // open question / permission request, the ball is in the human's court
+            // (L1). We're already past the `!alive` guard, so a dead session can never
+            // reach here (AC-L1.3). Bias to few false positives: only a clear question
+            // flips to needsInput, else the task is done (CLAUDE.md — a false nag hurts).
+            return looksLikeAwaitingUser(s.lastText) ? .needsInput : .concluded
         default: return s.lastRole == "user" ? (stalled ? .needsInput : .running) : .concluded
         }
+    }
+
+    /// Heuristic: does this assistant text read as *waiting on the human*? True when the
+    /// trimmed text ends with `?`, or contains one of a SMALL curated set of permission /
+    /// question phrases. Deliberately conservative (L1 / CLAUDE.md): a false `needsInput`
+    /// nags the user, so we only trip on clear asks — a rhetorical `?` mid-sentence on a
+    /// finished statement must NOT match (hence the *trailing* `?` test, not "contains ?").
+    static func looksLikeAwaitingUser(_ text: String?) -> Bool {
+        guard let raw = text else { return false }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        if trimmed.hasSuffix("?") { return true }
+
+        // Curated permission/question phrases, matched at WORD BOUNDARIES so a bare
+        // substring can't nag: "confirm" hits "please confirm" but not "confirmed",
+        // "should i" hits "should i deploy" but not "should ignore"/"should investigate".
+        let phrases = [
+            "let me know", "would you like", "should i", "shall i",
+            "do you want", "which would you", "want me to", "confirm", "approve",
+        ]
+        let lower = trimmed.lowercased()
+        return phrases.contains { containsWordBounded(lower, $0) }
+    }
+
+    /// `needle` occurs in `haystack` flanked by non-letters (or the string ends) — i.e.
+    /// word-bounded containment. This is the guard that keeps `looksLikeAwaitingUser` from
+    /// tripping on finished statements: "confirmed"/"approved"/"should investigate" must
+    /// NOT match "confirm"/"approve"/"should i" (L1 / CLAUDE.md: a false needsInput nags).
+    static func containsWordBounded(_ haystack: String, _ needle: String) -> Bool {
+        guard !needle.isEmpty else { return false }
+        var from = haystack.startIndex
+        while let r = haystack.range(of: needle, range: from..<haystack.endIndex) {
+            let leftOK = r.lowerBound == haystack.startIndex
+                || !haystack[haystack.index(before: r.lowerBound)].isLetter
+            let rightOK = r.upperBound == haystack.endIndex
+                || !haystack[r.upperBound].isLetter
+            if leftOK && rightOK { return true }
+            from = haystack.index(after: r.lowerBound)
+        }
+        return false
     }
 
     // MARK: - Host + source resolution
@@ -204,6 +301,30 @@ public enum SessionMerger {
     static func displayName(for cwd: String) -> String {
         let name = (cwd as NSString).lastPathComponent
         return name.isEmpty ? cwd : name
+    }
+
+    /// Canonicalize a filesystem path for joining (D4). Resolves symlinks (so `/tmp/x`
+    /// and `/private/tmp/x` — `/tmp` is a macOS symlink — compare equal), standardizes
+    /// (`.`/`..`), and strips any trailing `/`. Used on BOTH sides of the Pass-2 cwd
+    /// compare so equivalent spellings of the same directory bind, while genuinely
+    /// distinct directories still don't collide. Empty stays empty.
+    static func normalizedPath(_ p: String) -> String {
+        guard !p.isEmpty else { return p }
+        let resolved = URL(fileURLWithPath: p).standardizedFileURL
+            .resolvingSymlinksInPath().path
+        if resolved.count > 1, resolved.hasSuffix("/") {
+            return String(resolved.dropLast())
+        }
+        return resolved
+    }
+
+    /// Resolve a sessionId through an alias map (D9 seam). Returns the canonical id when
+    /// `aliases` maps it, else the id unchanged. The forward-looking use is a
+    /// `cliSessionId → desktop local_… id` map (populated once the desktop source lands)
+    /// that collapses the same conversation seen from two sources to one row. With the
+    /// default-empty map this is the identity, so present-day output is unchanged.
+    static func canonicalSessionId(_ id: String, aliases: [String: String]) -> String {
+        aliases[id] ?? id
     }
 
     /// Needs-you-first (needsInput → running → concluded), then most-recent activity.
