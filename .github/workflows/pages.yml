@@ -32,8 +32,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true   # self-enable Pages (Source: GitHub Actions) so no manual Settings step
       - name: Upload site/ artifact
         uses: actions/upload-pages-artifact@v3
         with:
