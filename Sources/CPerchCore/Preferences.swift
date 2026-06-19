@@ -75,6 +75,20 @@ public enum RetentionWindow: Int, CaseIterable, Sendable, Codable {
     }
 }
 
+/// A three-way accessibility override (Accessibility tab, v0.5). `system` follows the matching
+/// macOS Accessibility ▸ Display setting; `on`/`off` force it on/off regardless. Resolved against
+/// the live system flag by the pure `effective(_:system:)` helper below.
+public enum A11yOverride: String, CaseIterable, Sendable, Codable {
+    case system, on, off
+    public var label: String {
+        switch self {
+        case .system: return "Follow System"
+        case .on:     return "Always on"
+        case .off:    return "Off"
+        }
+    }
+}
+
 /// All cPerch preferences. Persistence is via `UserDefaults` (see `load`/`save`).
 public struct Preferences: Equatable, Sendable {
     public var theme: AppTheme
@@ -94,6 +108,18 @@ public struct Preferences: Equatable, Sendable {
     /// Start cPerch at login via SMAppService (v0.4 #7). Opt-in — we never auto-enroll.
     public var launchAtLogin: Bool
 
+    // Accessibility (Accessibility tab, v0.5). Shapes are on by default (the "always-on" call) with
+    // an opt-out; the three overrides default to `.system` so cPerch honors the OS settings unless
+    // the user forces them. Each is resolved at render time via `effective(_:system:)`.
+    /// Render a distinct SF Symbol per status, not just a color dot (A1).
+    public var showStatusShapes: Bool
+    /// High-contrast palette override (A3) — `.system` follows macOS Increase Contrast.
+    public var highContrast: A11yOverride
+    /// Reduce-motion override (A5) — gates the popover animation.
+    public var reduceMotion: A11yOverride
+    /// Reduce-transparency override (A6) — gates the roster's material background.
+    public var reduceTransparency: A11yOverride
+
     /// Sensible starter defaults: follow the system, a simple list, respect Focus/DND,
     /// auto-dismiss notifications after a calm **10 s**, and keep finished sessions **3 h**
     /// (the prior hard-coded `SessionStore` retention). Notify on needs-input + error, not
@@ -110,7 +136,9 @@ public struct Preferences: Equatable, Sendable {
                 retention: RetentionWindow = .h3,
                 notifyOnNeedsInput: Bool = true, notifyOnError: Bool = true,
                 notifyOnCompletion: Bool = false, showAllDoneGlyph: Bool = true,
-                launchAtLogin: Bool = false) {
+                launchAtLogin: Bool = false,
+                showStatusShapes: Bool = true, highContrast: A11yOverride = .system,
+                reduceMotion: A11yOverride = .system, reduceTransparency: A11yOverride = .system) {
         self.theme = theme
         self.viewMode = viewMode
         self.dndMode = dndMode
@@ -123,6 +151,10 @@ public struct Preferences: Equatable, Sendable {
         self.notifyOnCompletion = notifyOnCompletion
         self.showAllDoneGlyph = showAllDoneGlyph
         self.launchAtLogin = launchAtLogin
+        self.showStatusShapes = showStatusShapes
+        self.highContrast = highContrast
+        self.reduceMotion = reduceMotion
+        self.reduceTransparency = reduceTransparency
     }
 
     // MARK: - UserDefaults persistence (keys namespaced under "pref.")
@@ -139,6 +171,10 @@ public struct Preferences: Equatable, Sendable {
         static let notifyCompletion = "pref.notifyOnCompletion"
         static let showAllDoneGlyph = "pref.showAllDoneGlyph"
         static let launchAtLogin = "pref.launchAtLogin"
+        static let showStatusShapes = "pref.showStatusShapes"
+        static let highContrast = "pref.highContrast"
+        static let reduceMotion = "pref.reduceMotion"
+        static let reduceTransparency = "pref.reduceTransparency"
     }
 
     /// Load from `store`, falling back to `.defaults` for any missing or unrecognized
@@ -163,6 +199,10 @@ public struct Preferences: Equatable, Sendable {
         if store.object(forKey: Key.notifyCompletion) != nil { p.notifyOnCompletion = store.bool(forKey: Key.notifyCompletion) }
         if store.object(forKey: Key.showAllDoneGlyph) != nil { p.showAllDoneGlyph = store.bool(forKey: Key.showAllDoneGlyph) }
         if store.object(forKey: Key.launchAtLogin) != nil { p.launchAtLogin = store.bool(forKey: Key.launchAtLogin) }
+        if store.object(forKey: Key.showStatusShapes) != nil { p.showStatusShapes = store.bool(forKey: Key.showStatusShapes) }
+        if let raw = store.string(forKey: Key.highContrast), let v = A11yOverride(rawValue: raw) { p.highContrast = v }
+        if let raw = store.string(forKey: Key.reduceMotion), let v = A11yOverride(rawValue: raw) { p.reduceMotion = v }
+        if let raw = store.string(forKey: Key.reduceTransparency), let v = A11yOverride(rawValue: raw) { p.reduceTransparency = v }
         return p
     }
 
@@ -179,6 +219,21 @@ public struct Preferences: Equatable, Sendable {
         store.set(notifyOnCompletion, forKey: Key.notifyCompletion)
         store.set(showAllDoneGlyph, forKey: Key.showAllDoneGlyph)
         store.set(launchAtLogin, forKey: Key.launchAtLogin)
+        store.set(showStatusShapes, forKey: Key.showStatusShapes)
+        store.set(highContrast.rawValue, forKey: Key.highContrast)
+        store.set(reduceMotion.rawValue, forKey: Key.reduceMotion)
+        store.set(reduceTransparency.rawValue, forKey: Key.reduceTransparency)
+    }
+}
+
+/// Resolve a three-way accessibility override against the live system flag (v0.5). `.on`/`.off`
+/// force the result; `.system` mirrors `system`. Pure — the App layer passes the live
+/// `NSWorkspace.shared.accessibilityDisplay*` value in as `system`, so the rule stays unit-testable.
+public func effective(_ override: A11yOverride, system: Bool) -> Bool {
+    switch override {
+    case .system: return system
+    case .on:     return true
+    case .off:    return false
     }
 }
 

@@ -24,10 +24,45 @@ struct RosterView: View {
     var onJump: (Session) -> Void = { _ in }
     var onSettings: () -> Void = {}
     var onQuit: () -> Void = {}
+    /// The cross-track seam (v0.5): a11y preferences threaded in from MenuBarController.
+    /// Defaulted so the existing labeled call sites (and the previews) compile unchanged;
+    /// the resolved a11y state is derived from this + the SwiftUI `@Environment` values below.
+    var preferences: Preferences = .defaults
 
     /// Collapsed source-group headers (by `SessionSource.rawValue`) for the grouped view.
     /// `@State` so it survives roster refreshes (SwiftUI preserves it across rootView updates).
     @State private var collapsedSources: Set<String> = []
+
+    // MARK: - Accessibility environment (v0.5)
+    //
+    // SwiftUI re-invokes `body` automatically when these change, so the roster reacts live to
+    // the System Settings ▸ Accessibility ▸ Display toggles. They are the *readable* display
+    // preferences — not the Accessibility (AX) control permission cPerch is forbidden to request.
+
+    /// macOS Increase Contrast, as seen by SwiftUI (the "system" input for `highContrast`).
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    /// The active appearance — selects the light vs dark high-contrast accent variant.
+    @Environment(\.colorScheme) private var colorScheme
+    /// macOS Reduce Transparency, as seen by SwiftUI (the "system" input for `reduceTransparency`).
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    /// High contrast is effective when the pref forces it, or it's `.system` and macOS has Increase
+    /// Contrast on. Computed once here and threaded down (the leaf `StatusDot` never reads prefs/env).
+    private var highContrast: Bool {
+        effective(preferences.highContrast, system: colorSchemeContrast == .increased)
+    }
+    /// Dark appearance — picks the dark HC accent set in `Tokens.statusColor`.
+    private var isDark: Bool { colorScheme == .dark }
+    /// Render a glyph per status (A1) vs the plain colored dot — the user's opt-out.
+    private var showShapes: Bool { preferences.showStatusShapes }
+    /// Reduce-transparency is effective → draw the roster background solid (A6).
+    private var reduceTransparencyEffective: Bool {
+        effective(preferences.reduceTransparency, system: reduceTransparency)
+    }
+    /// The shared color/line for dividers and pill borders. Semantic `separatorColor` already meets
+    /// system contrast and boosts under Increase Contrast (A2); in high contrast we also drop the
+    /// faint per-row opacity so the lines read at full strength (A3).
+    private var dividerColor: Color { TokenColors.separator }
 
     /// Needs-you-first: needsInput → running → concluded; within a bucket, the
     /// most recently active (or longest-blocked) first.
@@ -61,7 +96,7 @@ struct RosterView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            Divider().overlay(TokenColors.divider)
+            Divider().overlay(dividerColor)
 
             if ordered.isEmpty {
                 emptyState
@@ -75,11 +110,21 @@ struct RosterView: View {
                 .frame(maxHeight: maxListHeight)
             }
 
-            Divider().overlay(TokenColors.divider)
+            Divider().overlay(dividerColor)
             footer
         }
         .frame(width: 340)
-        .background(.background)
+        .background(rosterBackground)
+    }
+
+    /// The roster surface (A6): a solid window background when Reduce Transparency is effective,
+    /// otherwise the default material so the popover keeps its translucent Claude look.
+    @ViewBuilder private var rosterBackground: some View {
+        if reduceTransparencyEffective {
+            Color(NSColor.windowBackgroundColor)
+        } else {
+            Color.clear.background(.background)
+        }
     }
 
     // MARK: - List layouts (flat vs grouped-by-source)
@@ -89,9 +134,11 @@ struct RosterView: View {
             ForEach(Array(ordered.enumerated()), id: \.element.id) { index, session in
                 SessionRow(session: session,
                            disambiguator: disambiguationLabels[session.id],
+                           showShapes: showShapes, highContrast: highContrast, dark: isDark,
                            onJump: onJump)
                 if index < ordered.count - 1 {
-                    Divider().overlay(TokenColors.divider.opacity(0.6))
+                    // Subtle hairline normally; full-strength separator in high contrast (A2/A3).
+                    Divider().overlay(dividerColor.opacity(highContrast ? 1 : 0.6))
                         .padding(.leading, 28)
                 }
             }
@@ -115,14 +162,14 @@ struct RosterView: View {
                 HStack(spacing: 6) {
                     Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(TokenColors.midGray)
+                        .foregroundStyle(TokenColors.secondaryText)
                         .frame(width: 10, alignment: .center)
                     Text(SessionGrouping.label(for: source).uppercased())
                         .font(TokenFonts.ui(10, weight: .semibold))
-                        .foregroundStyle(TokenColors.midGray)
+                        .foregroundStyle(TokenColors.secondaryText)
                     Text("\(sessions.count)")
                         .font(TokenFonts.ui(10))
-                        .foregroundStyle(TokenColors.midGray.opacity(0.7))
+                        .foregroundStyle(TokenColors.secondaryText)   // semantic; drop the extra opacity (A2)
                     Spacer()
                 }
                 .padding(.horizontal, 12)
@@ -135,10 +182,11 @@ struct RosterView: View {
                 ForEach(sessions) { session in
                     SessionRow(session: session,
                                disambiguator: disambiguationLabels[session.id],
+                               showShapes: showShapes, highContrast: highContrast, dark: isDark,
                                onJump: onJump)
                 }
             }
-            Divider().overlay(TokenColors.divider.opacity(0.6))
+            Divider().overlay(dividerColor.opacity(highContrast ? 1 : 0.6))
         }
     }
 
@@ -157,7 +205,7 @@ struct RosterView: View {
             Spacer()
             Text(summaryLabel)
                 .font(TokenFonts.ui(11))
-                .foregroundStyle(TokenColors.midGray)
+                .foregroundStyle(TokenColors.secondaryText)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -176,7 +224,7 @@ struct RosterView: View {
             Spacer()
             Text("No active sessions")
                 .font(TokenFonts.ui(12))
-                .foregroundStyle(TokenColors.midGray)
+                .foregroundStyle(TokenColors.secondaryText)
             Spacer()
         }
         .padding(.vertical, 24)
@@ -189,7 +237,7 @@ struct RosterView: View {
                     .font(.system(size: 12))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(TokenColors.midGray)
+            .foregroundStyle(TokenColors.secondaryText)
             .help("Settings")
 
             Spacer()
@@ -199,7 +247,7 @@ struct RosterView: View {
                     .font(TokenFonts.ui(11))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(TokenColors.midGray)
+            .foregroundStyle(TokenColors.secondaryText)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -212,11 +260,17 @@ struct SessionRow: View {
     /// L2: a muted secondary label (relative time) shown under the name when this row's
     /// `displayName` collides with another visible row; nil when the name is unique.
     var disambiguator: String? = nil
+    /// Resolved a11y state, computed once in `RosterView` and threaded down (A1/A3) so the
+    /// leaf views never read prefs/environment themselves.
+    var showShapes: Bool = true
+    var highContrast: Bool = false
+    var dark: Bool = false
     var onJump: (Session) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            StatusDot(status: session.status)
+            StatusDot(status: session.status,
+                      showShapes: showShapes, highContrast: highContrast, dark: dark)
                 .padding(.top, 4)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -228,17 +282,25 @@ struct SessionRow: View {
                         // Muted secondary label disambiguating same-named rows (L2).
                         Text(disambiguator)
                             .font(TokenFonts.ui(10))
-                            .foregroundStyle(TokenColors.midGray)
+                            .foregroundStyle(TokenColors.tertiaryText)
                             .lineLimit(1)
                     }
                     if session.status == .needsInput, let label = blockedLabel {
+                        // "blocked Nm" pill (A2/A3): readable semantic text on a solid surface with a
+                        // status-colored border — was orange text on a 14%-orange fill (≈3:1, illegible).
+                        // The hue persists only in the border; the border goes full-strength in HC.
+                        let pillStroke = Color(Tokens.statusColor(.needsInput, highContrast: highContrast, dark: dark))
                         Text(label)
                             .font(TokenFonts.ui(10, weight: .medium))
-                            .foregroundStyle(TokenColors.needsInput)
+                            .foregroundStyle(TokenColors.secondaryText)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 1)
                             .background(
-                                Capsule().fill(TokenColors.needsInput.opacity(0.14))
+                                Capsule().fill(Color(NSColor.windowBackgroundColor))
+                            )
+                            .overlay(
+                                Capsule().strokeBorder(pillStroke.opacity(highContrast ? 1 : 0.7),
+                                                       lineWidth: 1)
                             )
                     }
                 }
@@ -246,7 +308,7 @@ struct SessionRow: View {
                 if let preview = session.latestMessage, !preview.isEmpty {
                     Text(preview)
                         .font(TokenFonts.mono(11))
-                        .foregroundStyle(TokenColors.midGray)
+                        .foregroundStyle(TokenColors.secondaryText)
                         .lineLimit(2)
                         .truncationMode(.tail)
                         .fixedSize(horizontal: false, vertical: true)
@@ -262,11 +324,17 @@ struct SessionRow: View {
                     .font(TokenFonts.ui(11, weight: .medium))
             }
             .buttonStyle(.borderless)
+            .accessibilityLabel("Jump")
             .help("Focus the existing \(session.displayName) window")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
         .contentShape(Rectangle())
+        // A4: one VoiceOver element per row — the composed spoken state (name, status, wait, latest),
+        // with Jump reachable as a named action. The visible Jump button stays functional + labeled.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(CPerchCore.accessibilityLabel(for: session, now: Date()))
+        .accessibilityAction(named: "Jump") { onJump(session) }
     }
 
     /// "blocked Nm" / "blocked Nh" relative to now, derived from `blockedSince`
@@ -287,23 +355,38 @@ struct SessionRow: View {
     }
 }
 
-/// The per-row status dot — Claude accent palette.
+/// The per-row status indicator — a shape-coded SF Symbol (A1) tinted by the high-contrast-aware
+/// accent (A2/A3), or the plain colored dot when the user opts shapes off. Color/symbol/contrast are
+/// all resolved upstream in `RosterView` and threaded in; this leaf reads no prefs/environment.
 struct StatusDot: View {
     let status: DerivedStatus
+    /// Render the distinct glyph (default) vs the bare colored dot (the shapes opt-out).
+    var showShapes: Bool = true
+    var highContrast: Bool = false
+    var dark: Bool = false
 
+    /// The accent fill — standard brand hue, or the verified high-contrast variant for the appearance.
     private var color: Color {
-        switch status {
-        case .needsInput: return TokenColors.needsInput   // orange
-        case .running:    return TokenColors.running       // blue
-        case .concluded:  return TokenColors.concluded     // green
-        }
+        Color(Tokens.statusColor(status, highContrast: highContrast, dark: dark))
     }
 
     var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 9, height: 9)
-            .accessibilityLabel(Text(status.rawValue))
+        Group {
+            if showShapes {
+                // Distinct silhouette per status (triangle / half-disc / check) so the three states
+                // separate in grayscale / for CVD users — the WCAG 1.4.1 fix. ~11 pt reads at the row.
+                Image(systemName: Tokens.symbolName(for: statusSymbol(for: status)))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 13, height: 13)
+            } else {
+                Circle()
+                    .fill(color)
+                    .frame(width: 9, height: 9)
+            }
+        }
+        // A4: the dot is decorative — the row's combined element speaks the status in words.
+        .accessibilityHidden(true)
     }
 }
 

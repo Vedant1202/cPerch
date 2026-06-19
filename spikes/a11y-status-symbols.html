@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cPerch — status symbol options (accessibility spike)</title>
+<style>
+:root{
+ --bg:#faf9f5;--fg:#141413;--muted:#73726b;--card:#ffffff;--bd:rgba(0,0,0,.12);
+ --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+ --info-bg:#E6F1FB;--info-fg:#0C447C;--info-bd:#378ADD;--danger-bg:#FCEBEB;--danger-fg:#A32D2D;
+}
+@media(prefers-color-scheme:dark){
+ :root{--bg:#161513;--fg:#e8e6dc;--muted:#9c9a90;--card:#1f1e1c;--bd:rgba(255,255,255,.14);
+  --info-bg:#0C447C;--info-fg:#B5D4F4;--danger-bg:#501313;--danger-fg:#F09595;}
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,system-ui,Segoe UI,sans-serif;max-width:760px;margin:24px auto;padding:0 16px;line-height:1.6}
+h1{font-size:20px;font-weight:500}
+p.note{color:var(--muted);font-size:13px}
+.a11y-card{background:var(--card);border:0.5px solid var(--bd);border-radius:12px;padding:16px 18px;margin:0 0 14px}
+.a11y-card.rec{border:2px solid var(--info-bd)}
+.ptag{font-size:11px;margin:0 0 8px}
+.names{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.chiprow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.chip{display:flex;flex-direction:column;align-items:center;gap:4px}
+.lab{font-size:11px;line-height:1}
+.panel{border-radius:8px;padding:10px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.pill{font-size:11px;padding:2px 8px;border-radius:6px}
+</style>
+</head>
+<body>
+<h1>cPerch — status symbol options</h1>
+<p class="note">Faithful SVG stand-ins for the SF Symbols (the real glyphs only render in the macOS app). Read the <strong>grayscale</strong> column — that is effectively what a color-blind user sees. Final 9–11&nbsp;pt legibility is verified on-device with the real symbols.</p>
+<div id="a11y-root"></div>
+<script>
+const ORANGE='#D97757',BLUE='#6A9BCC',GREEN='#788C5D';
+const STAT=[['needs input',ORANGE],['running',BLUE],['concluded',GREEN]];
+function sym(t,c,s){
+ const H='width="'+s+'" height="'+s+'" viewBox="0 0 24 24"';
+ const c0='<circle cx="12" cy="12" r="11" fill="'+c+'"/>';
+ const bang='<rect x="10.7" y="5.8" width="2.6" height="7.6" rx="1.3" fill="#fff"/><circle cx="12" cy="17.2" r="1.5" fill="#fff"/>';
+ if(t==='excl-circle')return '<svg '+H+'>'+c0+bang+'</svg>';
+ if(t==='ellipsis')return '<svg '+H+'>'+c0+'<circle cx="6.7" cy="12" r="1.6" fill="#fff"/><circle cx="12" cy="12" r="1.6" fill="#fff"/><circle cx="17.3" cy="12" r="1.6" fill="#fff"/></svg>';
+ if(t==='check')return '<svg '+H+'>'+c0+'<path d="M6.6 12.5l3.1 3.1 6.7-7.3" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+ if(t==='excl-tri'){const tri='<path d="M12 3.3 L21.4 19.9 Q22.1 21.5 20.3 21.5 L3.7 21.5 Q1.9 21.5 2.6 19.9 Z" fill="'+c+'"/>';return '<svg '+H+'>'+tri+'<rect x="10.7" y="8.9" width="2.6" height="6.4" rx="1.3" fill="#fff"/><circle cx="12" cy="18.3" r="1.4" fill="#fff"/></svg>';}
+ if(t==='half')return '<svg '+H+'><circle cx="12" cy="12" r="10.4" fill="none" stroke="'+c+'" stroke-width="2.1"/><path d="M12 1.6 A10.4 10.4 0 0 0 12 22.4 Z" fill="'+c+'"/></svg>';
+ if(t==='dot')return '<svg '+H+'><circle cx="12" cy="12" r="9.5" fill="'+c+'"/></svg>';
+ return '';
+}
+function panel(tag,bg,isDark,isGray,types){
+ const labCol=isDark?'#E8E6DC':'#33322E', mut=isDark?'#9C9A90':'#73726B', f=isGray?'filter:grayscale(1)':'';
+ const big=types.map((t,i)=>'<div class="chip"><span>'+sym(t,STAT[i][1],22)+'</span><span class="lab" style="color:'+labCol+'">'+STAT[i][0]+'</span></div>').join('');
+ const small=types.map((t,i)=>'<span>'+sym(t,STAT[i][1],12)+'</span>').join('<span style="display:inline-block;width:12px"></span>');
+ return '<div class="panel" style="background:'+bg+';'+f+'"><p class="ptag" style="color:'+mut+'">'+tag+(isGray?' · the real test':'')+'</p><div class="chiprow">'+big+'</div><div class="chiprow" style="margin-top:9px;align-items:center">'+small+'<span class="lab" style="color:'+mut+';margin-left:4px">12px</span></div></div>';
+}
+function menubar(types){
+ return '<div style="display:flex;align-items:center;gap:7px;background:#E9E7DF;border-radius:6px;padding:5px 9px;width:fit-content"><span style="font-size:11px;color:#73726B">menu bar</span><span style="display:inline-flex;align-items:center;gap:3px">'+sym(types[0],ORANGE,15)+'<span style="font-size:12px;font-weight:500;color:#993C1D">3</span></span></div>';
+}
+const OPTS=[
+ {k:'A',name:'enclosed circle-fill',rec:true,names:'exclamationmark.circle.fill · ellipsis.circle.fill · checkmark.circle.fill',t:['excl-circle','ellipsis','check']},
+ {k:'B',name:'alert triangle for needs-input',rec:false,names:'exclamationmark.triangle.fill · ellipsis.circle.fill · checkmark.circle.fill',t:['excl-tri','ellipsis','check']},
+ {k:'C',name:'distinct silhouettes',rec:false,names:'exclamationmark.triangle.fill · circle.lefthalf.filled · checkmark.circle.fill',t:['excl-tri','half','check']}
+];
+const today='<div class="a11y-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:16px;font-weight:500">Today — color only</span><span class="pill" style="background:var(--danger-bg);color:var(--danger-fg)">states collapse in grayscale</span></div><div class="grid">'+panel('color','#FBFAF7',false,false,['dot','dot','dot'])+panel('grayscale','#FBFAF7',false,true,['dot','dot','dot'])+'</div></div>';
+const cards=OPTS.map(o=>'<div class="a11y-card '+(o.rec?'rec':'')+'"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span style="font-size:16px;font-weight:500">Option '+o.k+' — '+o.name+'</span>'+(o.rec?'<span class="pill" style="background:var(--info-bg);color:var(--info-fg)">recommended</span>':'')+'</div><p class="names" style="margin:0 0 10px">'+o.names+'</p><div class="grid">'+panel('color','#FBFAF7',false,false,o.t)+panel('grayscale','#FBFAF7',false,true,o.t)+panel('dark','#141413',true,false,o.t)+'</div><div style="margin-top:10px">'+menubar(o.t)+'</div></div>').join('');
+document.getElementById('a11y-root').innerHTML=today+cards;
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import CPerchCore
 
 extension NSColor {
     /// 0xRRGGBB → sRGB color.
@@ -53,4 +54,52 @@ enum TokenFonts {
         }
         return .system(size: size, weight: weight, design: .monospaced)
     }
+}
+
+// MARK: - Accessibility vocabulary (v0.5) — consumed by RosterView (Track R) + MenuBarController (Track M)
+
+extension Tokens {
+    /// High-contrast status fills (A3). Verified ≥4.5:1 on light (`#FAF9F5`/white), ≥7:1 on dark
+    /// (`#141413`). The *standard* palette keeps the brand accents (dark already passes; light leans
+    /// on the always-on shape + a hairline ring), so only high contrast swaps the fill.
+    enum HC {
+        static let needsInputLight = NSColor(hex: 0xAB5E45)
+        static let runningLight    = NSColor(hex: 0x51769B)
+        static let concludedLight  = NSColor(hex: 0x677850)
+        static let needsInputDark  = NSColor(hex: 0xDF8B70)
+        static let runningDark     = NSColor(hex: 0x77A4D1)
+        static let concludedDark   = NSColor(hex: 0x96A581)
+    }
+
+    /// The fill color for a status, honoring high contrast + the active appearance (A2/A3).
+    static func statusColor(_ status: DerivedStatus, highContrast: Bool, dark: Bool) -> NSColor {
+        switch status {
+        case .needsInput: return highContrast ? (dark ? HC.needsInputDark : HC.needsInputLight) : needsInput
+        case .running:    return highContrast ? (dark ? HC.runningDark    : HC.runningLight)    : running
+        case .concluded:  return highContrast ? (dark ? HC.concludedDark  : HC.concludedLight)  : concluded
+        }
+    }
+
+    /// On-device fallback flip (A1): if the triangle / half-disc read too busy at 9 pt, set `true`
+    /// for the cohesive all-circle family. The locked default keeps the distinct-silhouette set.
+    static let useCircleFallback = false
+
+    /// The concrete SF Symbol name for an abstract `StatusSymbol` (A1).
+    static func symbolName(for symbol: StatusSymbol) -> String {
+        switch symbol {
+        case .needsInput: return useCircleFallback ? "exclamationmark.circle.fill" : "exclamationmark.triangle.fill"
+        case .running:    return useCircleFallback ? "ellipsis.circle.fill"        : "circle.lefthalf.filled"
+        case .concluded:  return "checkmark.circle.fill"
+        case .idle:       return "circle.fill"
+        }
+    }
+}
+
+extension TokenColors {
+    /// Semantic text / line colors (A2) — adapt to light/dark AND auto-boost under macOS Increase
+    /// Contrast, fixing the measured light-mode failures (e.g. preview text at 2.11:1) for everyone.
+    /// These replace hardcoded `midGray` / `divider` at the roster's secondary sites.
+    static let secondaryText = Color(NSColor.secondaryLabelColor)
+    static let tertiaryText  = Color(NSColor.tertiaryLabelColor)
+    static let separator     = Color(NSColor.separatorColor)
 }

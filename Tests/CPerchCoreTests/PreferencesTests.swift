@@ -31,6 +31,11 @@ struct PreferencesTests {
         #expect(p.notifyOnCompletion == false)
         #expect(p.showAllDoneGlyph == true)
         #expect(p.launchAtLogin == false)
+        // v0.5 accessibility defaults: status shapes on, every override follows the system.
+        #expect(p.showStatusShapes == true)
+        #expect(p.highContrast == .system)
+        #expect(p.reduceMotion == .system)
+        #expect(p.reduceTransparency == .system)
     }
 
     @Test("an empty store loads exactly the defaults")
@@ -46,9 +51,21 @@ struct PreferencesTests {
                             retention: .h12,
                             notifyOnNeedsInput: false, notifyOnError: false,
                             notifyOnCompletion: true, showAllDoneGlyph: false,
-                            launchAtLogin: true)
+                            launchAtLogin: true,
+                            showStatusShapes: false, highContrast: .on,
+                            reduceMotion: .off, reduceTransparency: .on)
         p.save(to: store)
         #expect(Preferences.load(from: store) == p)
+    }
+
+    @Test("effective(): .on/.off ignore the system flag, .system mirrors it")
+    func effectiveOverride() {
+        #expect(effective(.on, system: false) == true)
+        #expect(effective(.on, system: true) == true)
+        #expect(effective(.off, system: true) == false)
+        #expect(effective(.off, system: false) == false)
+        #expect(effective(.system, system: true) == true)
+        #expect(effective(.system, system: false) == false)
     }
 
     @Test("an unrecognized stored value falls back to that field's default")
