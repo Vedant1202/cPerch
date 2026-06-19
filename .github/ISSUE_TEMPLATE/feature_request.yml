@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an idea or improvement for cPerch
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        cPerch aims to stay **calm, minimal, fully local, and zero-permission**. Ideas that fit that ethos
+        are easiest to land — but all suggestions are welcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: The motivation — what's painful or missing today.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What you'd like cPerch to do.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, links, or notes. Flag anything that would need a network call or a new permission.

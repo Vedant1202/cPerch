@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & documentation
+    url: https://github.com/Vedant1202/cPerch#readme
+    about: Build/run help and architecture live in the README and the docs/ handover guides.

@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in cPerch isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. cPerch reads only your local `~/.claude` — please **don't paste private
+        transcript content**; redact paths and messages as needed.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I …, cPerch … but I expected …
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: e.g. 14.5 (Sonoma)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: cPerch version / commit
+      description: The short git SHA you built from, if known.
+      placeholder: e.g. fa19a3c
+  - type: dropdown
+    id: host
+    attributes:
+      label: Where were the affected sessions hosted?
+      multiple: true
+      options:
+        - Terminal — Terminal.app
+        - Terminal — iTerm2
+        - Terminal — other
+        - Claude desktop app
+        - Not sure
+  - type: textarea
+    id: print-output
+    attributes:
+      label: Output of `swift run CPerchApp --print` (optional)
+      description: Helps diagnose detection issues. Redact anything sensitive first.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: I removed any private paths or transcript content from this report.
+          required: true
