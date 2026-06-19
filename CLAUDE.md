@@ -4,17 +4,18 @@
 terminals and the Claude desktop app), shows each session's status and latest message, and lets
 you jump to the existing session window. Tagline: *a perch for your Claude sessions.*
 
-## ✅ Project status — v0 shipped; post-v0 batches in progress
+## ✅ Project status — v0 + five post-v0 batches shipped & merged to `main`
 
-v0 is built, runs, and was signed off 2026-06-18 (detection pipeline, menu-bar dot + roster, jump,
-calm notifications). Work has continued past it on feature branches (latest: **`daily-driver-v0.4`**,
-off `dedup-hardening-v0.1` — `main` is behind): dedup-hardening (v0.1/v0.2), group-by-host (v0.3),
-over-counting/retention fixes, and the v0.4 daily-driver batch (launch-at-login, global hotkey, richer
-menu-bar, error/completion notifications). **133 tests.**
+v0 shipped 2026-06-18 (detection pipeline, menu-bar dot + roster, jump, calm notifications). Five
+post-v0 batches have since landed and are now **squash-merged to `main`** (one commit per version):
+dedup-hardening (v0.1/v0.2), group-by-host + over-counting/retention (v0.3), the v0.4 daily-driver
+batch (launch-at-login, global hotkey, richer menu-bar, error/completion notifications), and the
+**v0.5 accessibility batch** (shape-coded status, baseline contrast fix, high-contrast mode, VoiceOver,
+reduce motion/transparency, Accessibility settings tab, white menu-bar plate). **141 tests.**
 
-**New here? Read the handover chain, newest first:** [docs/handover-v0.4.md](docs/handover-v0.4.md) →
-[v0.2](docs/handover-v0.2.md) → [v0](docs/handover-v0.md) — pickup guides (build/run, architecture,
-gotchas, what's next).
+**New here? Read the handover chain, newest first:** [docs/handover-v0.5.md](docs/handover-v0.5.md) →
+[v0.4](docs/handover-v0.4.md) → [v0.2](docs/handover-v0.2.md) → [v0](docs/handover-v0.md) — pickup
+guides (build/run, architecture, gotchas, what's next).
 
 ## What we're building (v0)
 

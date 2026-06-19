@@ -40,10 +40,8 @@ Legend: **‖** = parallel-agent track (own clean clone, disjoint files, reconve
 
 - [x] **C1 checkpoint:** reconverged in-tree (disjoint files) · 2 seam fixes (arg order; module-qualified `accessibilityLabel`) · boundary audit clean (Core Foundation-only; only readable `accessibilityDisplay*` flags; no AX/network/new reads) · `swift build` + `./scripts/test.sh` (141) + `./build.sh` green. Committed.
 
-## Phase 2 — On-device sign-off (manual · yours, from `dist/CPerch.app`)
-- [ ] Symbols distinct at 9–11 pt in color **and** under a grayscale / color filter (flip to all-circle fallback if needed)
-- [ ] Increase Contrast (system + tab override) strengthens UI live
-- [ ] Reduce Motion / Reduce Transparency (system + tab override) take effect
-- [ ] VoiceOver speaks the bar summary + each row, reaches Jump
-- [ ] Sign off → merge `accessibility-v0.5`; refresh handover
+## Phase 2 — On-device sign-off (manual) ✅ merged
+- [x] Bar glyph renders on the white plate — the blending / invisible-glyph fix verified on-device
+- [x] Sign off → squash-merged v0.1–v0.5 to `main` (5 per-version commits); [handover-v0.5](../docs/handover-v0.5.md) written
+- [ ] *(optional follow-up, recommended before distribution)* full grayscale/CVD legibility at 9–11 pt · live Increase-Contrast / Reduce-Motion / Reduce-Transparency · a VoiceOver pass
 </content>
