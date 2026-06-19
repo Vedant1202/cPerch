@@ -36,6 +36,7 @@ struct RegistryReaderTests {
         #expect(waiting?.status == "waiting")
         #expect(waiting?.kind == "interactive")
         #expect(waiting?.version == "2.1.181")
+        #expect(waiting?.entrypoint == "cli")   // v0.3: Terminal signal
     }
 
     @Test("the no-status desktop entry parses with status == nil")
@@ -48,6 +49,7 @@ struct RegistryReaderTests {
         #expect(desktop?.status == nil)   // older Claude omits status — tolerated
         #expect(desktop?.kind == "interactive")
         #expect(desktop?.version == "1.4.0")
+        #expect(desktop?.entrypoint == "claude-desktop")   // v0.3: Claude-app signal
     }
 
     @Test("a malformed file is skipped, not fatal")

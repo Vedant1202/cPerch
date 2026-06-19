@@ -19,6 +19,7 @@ struct SourceRecordsContractTests {
     func processStartTimeDefaultsNil() {
         let p = ProcessRecord(pid: 1, ppid: 1, tty: nil, cwd: nil, cpu: 0)   // pre-Phase-0 call shape
         #expect(p.startTime == nil)
+        #expect(p.resumedFrom == nil)   // B1 additive field also defaults nil
     }
 
     @Test("ProcessRecord: startTime round-trips when supplied")
@@ -32,6 +33,7 @@ struct SourceRecordsContractTests {
         let e = RegistryEntry(pid: 1, sessionId: "s", cwd: "/c",
                               status: nil, kind: nil, version: nil)            // pre-Phase-0 call shape
         #expect(e.startedAt == nil)
+        #expect(e.entrypoint == nil)   // v0.3 additive field also defaults nil
     }
 
     @Test("RegistryEntry: startedAt round-trips when supplied")

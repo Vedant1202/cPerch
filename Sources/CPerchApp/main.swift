@@ -41,7 +41,7 @@ app.setActivationPolicy(.accessory)
 let prefs = PreferencesStore()
 prefs.applyTheme()   // apply the saved appearance at launch
 
-let store = SessionStore()
+let store = SessionStore(retentionWindow: prefs.preferences.retention.seconds)
 let controller = MenuBarController(store: store, preferences: prefs)
 _ = controller   // retained for the app's lifetime
 

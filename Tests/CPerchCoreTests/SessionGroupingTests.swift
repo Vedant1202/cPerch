@@ -26,10 +26,10 @@ struct SessionGroupingTests {
         #expect(SessionGrouping.grouped([]).isEmpty)
     }
 
-    @Test("source labels")
+    @Test("source labels — Terminal vs Claude app")
     func labels() {
-        #expect(SessionGrouping.label(for: .cli) == "CLI")
-        #expect(SessionGrouping.label(for: .desktop) == "Desktop")
+        #expect(SessionGrouping.label(for: .cli) == "Terminal")
+        #expect(SessionGrouping.label(for: .desktop) == "Claude App")
         #expect(SessionGrouping.label(for: .background) == "Background")
         #expect(SessionGrouping.label(for: .unknown) == "Other")
     }

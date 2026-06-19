@@ -376,4 +376,31 @@ struct SessionMergerQualityTests {
         #expect(SessionMerger.canonicalSessionId("cli-abc", aliases: [:]) == "cli-abc")
         #expect(SessionMerger.canonicalSessionId("other", aliases: ["cli-abc": "local_abc"]) == "other")
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - Source classification (v0.3 — entrypoint-driven: Terminal vs Claude app)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test("resolveSource: entrypoint drives Terminal vs Claude app; bg kind stays Background")
+    func resolveSourceUsesEntrypoint() {
+        func entry(kind: String?, entrypoint: String?) -> RegistryEntry {
+            RegistryEntry(pid: 1, sessionId: "s", cwd: "/c", status: nil, kind: kind,
+                          version: nil, entrypoint: entrypoint)
+        }
+        // entrypoint "cli" → Terminal even with NO tty (host .unknown) — fixes the mislabel
+        // of a desktop-bundled terminal session.
+        #expect(SessionMerger.resolveSource(entry: entry(kind: "interactive", entrypoint: "cli"),
+                                            host: .unknown) == .cli)
+        // entrypoint "claude-desktop" → Claude app.
+        #expect(SessionMerger.resolveSource(entry: entry(kind: "interactive", entrypoint: "claude-desktop"),
+                                            host: .unknown) == .desktop)
+        // A bg-kind worker stays Background even with a cli entrypoint.
+        #expect(SessionMerger.resolveSource(entry: entry(kind: "bg", entrypoint: "cli"),
+                                            host: .terminal(app: "Terminal", tty: "ttys0")) == .background)
+        // No entrypoint (older CLI) → fall back to the kind+tty derivation (no regression).
+        #expect(SessionMerger.resolveSource(entry: entry(kind: "interactive", entrypoint: nil),
+                                            host: .terminal(app: "Terminal", tty: "ttys1")) == .cli)
+        #expect(SessionMerger.resolveSource(entry: entry(kind: "interactive", entrypoint: nil),
+                                            host: .unknown) == .desktop)
+    }
 }

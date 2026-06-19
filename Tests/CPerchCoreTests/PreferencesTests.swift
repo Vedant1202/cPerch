@@ -22,6 +22,8 @@ struct PreferencesTests {
         #expect(p.dndMode == .system)
         #expect(p.notificationDismiss == .timed)
         #expect(p.notificationTimeoutSeconds == 10)
+        #expect(p.retention == .h3)              // 3h — the prior hard-coded default
+        #expect(p.retention.seconds == 3 * 3600)
     }
 
     @Test("an empty store loads exactly the defaults")
@@ -33,7 +35,8 @@ struct PreferencesTests {
     func roundTrip() {
         let store = scratch()
         let p = Preferences(theme: .dark, viewMode: .groupedBySource, dndMode: .notifyAnyway,
-                            notificationDismiss: .persisted, notificationTimeoutSeconds: 25)
+                            notificationDismiss: .persisted, notificationTimeoutSeconds: 25,
+                            retention: .h12)
         p.save(to: store)
         #expect(Preferences.load(from: store) == p)
     }

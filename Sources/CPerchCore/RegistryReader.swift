@@ -61,7 +61,8 @@ public struct RegistryReader {
             status: dto.status,      // optional — absent in older/desktop files
             kind: dto.kind,
             version: dto.version,
-            startedAt: dto.startedAt.map { Date(timeIntervalSince1970: Double($0) / 1000.0) }
+            startedAt: dto.startedAt.map { Date(timeIntervalSince1970: Double($0) / 1000.0) },
+            entrypoint: dto.entrypoint   // "cli" / "claude-desktop" → Terminal vs Claude app (v0.3)
         )                            // `startedAt` is epoch MILLISECONDS; absent → nil (D3)
     }
 
@@ -79,5 +80,6 @@ public struct RegistryReader {
         let kind: String?
         let version: String?
         let startedAt: Int?
+        let entrypoint: String?
     }
 }

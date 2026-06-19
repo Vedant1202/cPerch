@@ -53,10 +53,14 @@ public struct ProcessScanner {
     /// `[]` (detection is best-effort; the merger tolerates a missing source).
     public func scan() -> [ProcessRecord] {
         guard let raw = try? listProcesses() else { return [] }
-        return ProcessScanner.parse(raw).map { row in
+        // Drop launcher/wrapper parents (C2) BEFORE the per-pid resolves, so one conversation
+        // (the desktop `disclaimer` launcher + its real `claude` child) isn't counted twice.
+        let leaves = ProcessScanner.leafRows(ProcessScanner.parse(raw))
+        return leaves.map { row in
             ProcessRecord(pid: row.pid, ppid: row.ppid, tty: row.tty,
                           cwd: resolveCwd(row.pid), cpu: row.cpu,
-                          startTime: resolveStartTime(row.pid))
+                          startTime: resolveStartTime(row.pid),
+                          resumedFrom: ProcessScanner.parseResumedFrom(row.command))   // B1 lineage
         }
     }
 
@@ -125,6 +129,35 @@ public struct ProcessScanner {
         if field == "??" || field == "?" || field == "-" { return nil }
         if field.hasPrefix("tty") { return field }
         return "tty" + field
+    }
+
+    // MARK: - Wrapper filter (C2) + resume lineage (B1) — session-overcounting
+
+    /// Keep only LEAF claude processes: drop any row whose pid is another claude row's
+    /// `ppid` — i.e. a launcher/wrapper that forked the real `claude` child (e.g. the
+    /// desktop `disclaimer`). Stops one conversation (launcher + child) from counting
+    /// twice. Independent sessions (different ppid chains) are all leaves, so all kept.
+    static func leafRows(_ rows: [Row]) -> [Row] {
+        let parentPids = Set(rows.map(\.ppid))
+        return rows.filter { !parentPids.contains($0.pid) }
+    }
+
+    /// The resumed-from sessionId on a `claude` command line — the value after `--resume`
+    /// (supports `--resume <id>` and `--resume=<id>`; ignores `--resume-session-at`). Used
+    /// to collapse a resumed/forked conversation to one row (B1). nil when absent.
+    static func parseResumedFrom(_ command: String) -> String? {
+        let tokens = command.split(whereSeparator: { $0 == " " || $0 == "\t" }).map(String.init)
+        for (i, token) in tokens.enumerated() {
+            if token == "--resume" {
+                guard i + 1 < tokens.count else { return nil }
+                let next = tokens[i + 1]
+                return next.hasPrefix("-") ? nil : next   // must be a value, not another flag
+            }
+            if token.hasPrefix("--resume=") {
+                return String(token.dropFirst("--resume=".count))
+            }
+        }
+        return nil
     }
 
     // MARK: - Start-time parsing (D3 PID-reuse guard)

@@ -36,8 +36,8 @@ public enum SessionGrouping {
     /// A human label for a source-group header.
     public static func label(for source: SessionSource) -> String {
         switch source {
-        case .cli:        return "CLI"
-        case .desktop:    return "Desktop"
+        case .cli:        return "Terminal"
+        case .desktop:    return "Claude App"
         case .background: return "Background"
         case .unknown:    return "Other"
         }

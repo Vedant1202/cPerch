@@ -23,7 +23,7 @@ public final class SessionStore: SessionProviding {
     private let claudeDir: URL
     private var projectsDir: URL { claudeDir.appendingPathComponent("projects", isDirectory: true) }
     private var sessionsDir: URL { claudeDir.appendingPathComponent("sessions", isDirectory: true) }
-    private let retentionWindow: TimeInterval
+    private var retentionWindow: TimeInterval   // runtime-configurable (Settings → General)
     private let retentionCap: Int
     private let recentTranscriptWindow: TimeInterval
     private let pollInterval: TimeInterval
@@ -72,6 +72,14 @@ public final class SessionStore: SessionProviding {
         stopFSEvents()
         pollTimer?.cancel(); pollTimer = nil
         debounceWork?.cancel(); debounceWork = nil
+    }
+
+    /// Change the concluded-session retention window at runtime (Settings → General) and
+    /// re-evaluate. Thread-safe: the window is written under `lock` (it's read under `lock`
+    /// in `refresh`), and the re-scan runs off the main thread on `queue`.
+    public func setRetentionWindow(_ seconds: TimeInterval) {
+        lock.lock(); retentionWindow = seconds; lock.unlock()
+        queue.async { [weak self] in self?.refresh() }
     }
 
     // MARK: - Refresh pipeline

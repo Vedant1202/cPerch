@@ -38,9 +38,14 @@ final class MenuBarController: NSObject {
         store.onChange = { [weak self] in
             DispatchQueue.main.async { self?.refresh() }
         }
-        // A settings change (e.g. switching to grouped view) re-renders the open roster.
+        // A settings change re-applies the retention window to the store (Settings → General)
+        // and re-renders the open roster (theme / view-mode).
         preferences.onChange = { [weak self] in
-            DispatchQueue.main.async { self?.updateRoster() }
+            guard let self else { return }
+            DispatchQueue.main.async {
+                self.store.setRetentionWindow(self.preferences.preferences.retention.seconds)
+                self.updateRoster()
+            }
         }
         store.start()
         refresh()

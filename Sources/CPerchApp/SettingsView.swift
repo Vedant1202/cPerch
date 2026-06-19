@@ -34,6 +34,11 @@ private struct GeneralSettingsTab: View {
                 ForEach(RosterViewMode.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .pickerStyle(.radioGroup)
+
+            Picker("Keep finished sessions for", selection: $prefs.retention) {
+                ForEach(RetentionWindow.allCases, id: \.self) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.menu)
         }
         .formStyle(.grouped)
     }

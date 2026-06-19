@@ -12,9 +12,14 @@ public protocol SessionProviding: AnyObject {
     var onChange: (() -> Void)? { get set }
     func start()
     func stop()
+    /// Change how long concluded sessions are retained (seconds) and re-evaluate. Optional:
+    /// the default is a no-op so non-configurable stores (e.g. the stub) need not implement it.
+    func setRetentionWindow(_ seconds: TimeInterval)
 }
 
 public extension SessionProviding {
     /// Default: derive the dot state from the current sessions.
     var aggregate: AggregateState { AggregateState(sessions: sessions) }
+    /// Default no-op — only the real `SessionStore` honors a runtime retention change.
+    func setRetentionWindow(_ seconds: TimeInterval) {}
 }

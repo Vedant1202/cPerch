@@ -20,10 +20,12 @@ public struct ProcessRecord: Sendable, Equatable {
     public let cwd: String?
     public let cpu: Double        // %CPU — busy-vs-idle corroboration
     public let startTime: Date?   // process start instant — the D3 PID-reuse guard; nil when unresolved
+    public let resumedFrom: String?  // sessionId from the cmdline `--resume <id>` — lineage collapse (B1)
 
-    public init(pid: Int, ppid: Int, tty: String?, cwd: String?, cpu: Double, startTime: Date? = nil) {
+    public init(pid: Int, ppid: Int, tty: String?, cwd: String?, cpu: Double, startTime: Date? = nil,
+                resumedFrom: String? = nil) {
         self.pid = pid; self.ppid = ppid; self.tty = tty; self.cwd = cwd; self.cpu = cpu
-        self.startTime = startTime
+        self.startTime = startTime; self.resumedFrom = resumedFrom
     }
 }
 
@@ -36,12 +38,13 @@ public struct RegistryEntry: Sendable, Equatable {
     public let kind: String?      // interactive | bg | daemon | daemon-worker
     public let version: String?
     public let startedAt: Date?   // session start instant (registry `startedAt`, epoch ms) — D3 PID-reuse guard
+    public let entrypoint: String?  // "cli" (terminal) | "claude-desktop" (Claude app) — the host signal (v0.3)
 
     public init(pid: Int, sessionId: String, cwd: String, status: String?, kind: String?,
-                version: String?, startedAt: Date? = nil) {
+                version: String?, startedAt: Date? = nil, entrypoint: String? = nil) {
         self.pid = pid; self.sessionId = sessionId; self.cwd = cwd
         self.status = status; self.kind = kind; self.version = version
-        self.startedAt = startedAt
+        self.startedAt = startedAt; self.entrypoint = entrypoint
     }
 }
 

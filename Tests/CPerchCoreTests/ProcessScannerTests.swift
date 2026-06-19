@@ -39,9 +39,10 @@ struct ProcessScannerTests {
     @Test func keepsOnlyGenuineSessions() {
         let records = scanner(ps: psFixture).scan()
         let pids = Set(records.map(\.pid))
-        // Genuine: CLI claude (2001), disclaimer-launched claude-code (5793 wrapper +
-        // 5794 binary). The wrapper's command names the real claude binary, so it counts.
-        #expect(pids == [2001, 5793, 5794])
+        // Genuine LEAF sessions: the CLI claude (2001) and the real claude-code binary
+        // (5794). The `disclaimer` launcher (5793) is 5794's PARENT, so leafRows drops it
+        // (session-overcounting C2) — one conversation must not count as launcher + child.
+        #expect(pids == [2001, 5794])
     }
 
     @Test func filtersDesktopHelpersAndDaemonNoise() {

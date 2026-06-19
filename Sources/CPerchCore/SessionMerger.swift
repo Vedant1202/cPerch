@@ -151,9 +151,23 @@ public enum SessionMerger {
             }
         }
 
+        // ── Collapse resumed/forked lineage (B1) ───────────────────────────────
+        // A live process that resumed from an ancestor session (cmdline `--resume <id>`,
+        // typically with `--fork-session`) supersedes that ancestor — so the forked
+        // conversation is ONE row, not one per transcript left in the cwd. Map each bound
+        // live pid → its `resumedFrom`, and drop the ancestor id when its descendant is live.
+        let processByPid = Dictionary(processes.map { ($0.pid, $0) }, uniquingKeysWith: { a, _ in a })
+        var supersededIds: Set<String> = []
+        for (sessionId, pid) in pidForSession {
+            guard let from = processByPid[pid]?.resumedFrom else { continue }
+            let ancestor = canonicalSessionId(from, aliases: aliases)
+            if ancestor != sessionId { supersededIds.insert(ancestor) }
+        }
+
         // ── Build one Session per known sessionId ──────────────────────────────
-        // The universe of sessions is every id seen in the registry or a transcript.
-        let allIds = Set(registryById.keys).union(transcriptsById.keys)
+        // The universe of sessions is every id seen in the registry or a transcript, minus
+        // any superseded resume-ancestor (B1).
+        let allIds = Set(registryById.keys).union(transcriptsById.keys).subtracting(supersededIds)
 
         let sessions = allIds.map { id -> Session in
             let entry = registryById[id]
@@ -280,10 +294,28 @@ public enum SessionMerger {
         }
     }
 
+    /// Classify a session's host (v0.3): Terminal (`.cli`) vs Claude app (`.desktop`) vs
+    /// `.background` vs `.unknown`. Daemon/`bg` kinds are Background whatever the entrypoint.
+    /// Otherwise the registry `entrypoint` is the DIRECT signal (`cli` → Terminal,
+    /// `claude-desktop` → Claude app) and is preferred over the tty-derived guess — which
+    /// mislabels a *terminal* session launched via the desktop-bundled `claude` binary (no
+    /// tty) as the desktop app. When `entrypoint` is absent (older CLIs), fall back to the
+    /// prior kind+tty derivation so nothing regresses.
     static func resolveSource(entry: RegistryEntry?, host: HostRef) -> SessionSource {
+        // 1) Daemon/background kinds first — neither a terminal nor the desktop app.
         switch entry?.kind {
         case "bg", "daemon", "daemon-worker": return .background
-        case "desktop":                       return .desktop
+        default: break
+        }
+        // 2) entrypoint is the direct Terminal-vs-Claude-app signal — prefer it.
+        switch entry?.entrypoint {
+        case "cli":            return .cli
+        case "claude-desktop": return .desktop
+        default: break
+        }
+        // 3) No entrypoint → fall back to the kind + tty derivation.
+        switch entry?.kind {
+        case "desktop": return .desktop
         case "interactive":
             // An interactive session reached via a terminal tab is a CLI session;
             // without a tty it's the desktop app.
