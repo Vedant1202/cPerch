@@ -58,12 +58,15 @@ public struct TranscriptSignal: Sendable, Equatable {
     public let lastText: String?         // latest assistant text — preview
     public let lastActivity: Date        // transcript mtime / last record timestamp
     public let aiTitle: String?          // AI-generated session title (transcript `ai-title` record) — L2; nil if none
+    public let hadApiError: Bool         // tail had an isApiErrorMessage/error record (v0.4 #4) — false if none
 
     public init(sessionId: String, cwd: String, lastRole: String?, lastStopReason: String?,
-                pendingToolUses: Int, lastText: String?, lastActivity: Date, aiTitle: String? = nil) {
+                pendingToolUses: Int, lastText: String?, lastActivity: Date, aiTitle: String? = nil,
+                hadApiError: Bool = false) {
         self.sessionId = sessionId; self.cwd = cwd; self.lastRole = lastRole
         self.lastStopReason = lastStopReason; self.pendingToolUses = pendingToolUses
         self.lastText = lastText; self.lastActivity = lastActivity
         self.aiTitle = aiTitle
+        self.hadApiError = hadApiError
     }
 }

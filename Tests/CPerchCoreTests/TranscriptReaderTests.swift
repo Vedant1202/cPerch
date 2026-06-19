@@ -204,4 +204,28 @@ struct TranscriptReaderTests {
         #expect(s.lastRole == nil)        // no real record at all
         #expect(s.pendingToolUses == 0)
     }
+
+    // MARK: - #4 · API-error detection (hadApiError)
+
+    // api-errored.jsonl ends with a synthetic assistant record carrying
+    // `isApiErrorMessage:true` (and a top-level `error`) — the turn the CLI writes when
+    // the API call itself fails. The reader must scan the raw tail and set hadApiError.
+    @Test func apiErrorRecordSetsHadApiError() throws {
+        let s = try read("api-errored")
+        #expect(s.hadApiError == true)
+    }
+
+    // tool-error-not-api.jsonl has a tool_result with `is_error:true` (a routine tool
+    // failure — a grep with no matches) but NO `isApiErrorMessage`/top-level `error`.
+    // The reader must NOT flag it: keying off `is_error` would cry wolf constantly.
+    @Test func toolErrorIsNotApiError() throws {
+        let s = try read("tool-error-not-api")
+        #expect(s.hadApiError == false)
+    }
+
+    // A normal, non-error transcript yields hadApiError == false (false-default holds).
+    @Test func nonErrorTranscriptHasNoApiError() throws {
+        let s = try read("concluded")
+        #expect(s.hadApiError == false)
+    }
 }

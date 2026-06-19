@@ -192,7 +192,8 @@ public enum SessionMerger {
                 lastActivity: sig?.lastActivity ?? .distantPast,
                 blockedSince: nil,                 // the store sets this over time
                 pid: livePid,
-                host: host
+                host: host,
+                hadApiError: sig?.hadApiError ?? false   // #4: tail carried an API-error record
             )
         }
 

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Carbon.HIToolbox
 import CPerchCore
 
 /// Owns the `NSStatusItem`: paints the aggregate dot in the bar and hosts the rich
@@ -16,6 +17,7 @@ final class MenuBarController: NSObject {
     private let hosting: NSHostingController<RosterView>
     private let notifier = Notifier()
     private var previousSessions: [Session] = []
+    private var hotkey: GlobalHotkey?
     private lazy var settingsWindow = SettingsWindowController(store: preferences)
 
     init(store: SessionProviding, preferences: PreferencesStore) {
@@ -49,24 +51,52 @@ final class MenuBarController: NSObject {
         }
         store.start()
         refresh()
+
+        // System-wide ⌘⌥` toggles the popover. Registered by physical key CODE
+        // (`kVK_ANSI_Grave`) so it tracks the top-left key across layouts. Via Carbon
+        // (no TCC permission); a nil result (chord already claimed) just means no
+        // hotkey — the bar still works by click.
+        hotkey = GlobalHotkey(keyCode: UInt32(kVK_ANSI_Grave),
+                              modifiers: UInt32(cmdKey | optionKey)) { [weak self] in
+            self?.togglePopover()
+        }
     }
 
     // MARK: - Bar dot
 
-    private func color(for state: AggregateState) -> NSColor {
-        switch state {
+    /// Map an abstract `MenuBarModel.Glyph` (from CPerchCore — color-free) to its
+    /// design-token dot color. The decision of *which* glyph lives in the Core; the
+    /// color binding lives here in the App layer.
+    private func color(for glyph: MenuBarModel.Glyph) -> NSColor {
+        switch glyph {
         case .needsInput: return Tokens.needsInput
         case .running:    return Tokens.running
         case .idle:       return Tokens.idleDim
+        case .allDone:    return Tokens.concluded
         }
     }
 
     private func refresh() {
         let current = store.sessions
+        // Pre-compute the pure model's inputs, then let CPerchCore decide the glyph +
+        // optional needs-you count (≥2). all-done glyph is gated by the preference.
+        let needsInputCount = current.filter { $0.status == .needsInput }.count
+        let allConcluded = !current.isEmpty && current.allSatisfy { $0.status == .concluded }
+        let model = menuBarModel(aggregate: store.aggregate,
+                                 needsInputCount: needsInputCount,
+                                 allConcluded: allConcluded,
+                                 allDoneGlyphEnabled: preferences.preferences.showAllDoneGlyph)
         if let button = statusItem.button {
-            let image = Self.dotImage(color: color(for: store.aggregate))
+            let image = Self.dotImage(color: color(for: model.glyph))
             image.isTemplate = false
             button.image = image
+            button.imagePosition = model.count == nil ? .imageOnly : .imageLeft
+            // The needs-you count rides next to the dot — small and subtle, no quota text.
+            if let count = model.count {
+                button.attributedTitle = Self.countTitle(count)
+            } else {
+                button.attributedTitle = NSAttributedString(string: "")
+            }
         }
         // Calm needs-input banners on →needsInput transitions (coalesced). DND mode +
         // notification life come from preferences; Focus suppression stays macOS's job.
@@ -120,6 +150,11 @@ final class MenuBarController: NSObject {
 
     private func showPopover() {
         guard let button = statusItem.button else { return }
+        // cPerch is an accessory/background app, so the popover won't come forward or
+        // take focus on its own when opened via the global hotkey (no click to make us
+        // active). Activate first so it appears above other apps and is key. Harmless
+        // on the click path, where we're already active.
+        NSApp.activate(ignoringOtherApps: true)
         updateRoster()
         // Size the popover to the SwiftUI content (RosterView is a fixed 340pt wide); the
         // scrollable list is capped at a screen-relative height so a long roster scrolls
@@ -147,5 +182,15 @@ final class MenuBarController: NSObject {
         NSBezierPath(ovalIn: NSRect(x: 0, y: 0, width: diameter, height: diameter)).fill()
         image.unlockFocus()
         return image
+    }
+
+    /// The needs-you count shown next to the dot — small, subtle, in the orange accent
+    /// so it reads as part of the needs-input state. A leading hair-space gives the dot
+    /// a little breathing room.
+    private static func countTitle(_ count: Int) -> NSAttributedString {
+        NSAttributedString(string: "\u{200A}\(count)", attributes: [
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: Tokens.needsInput,
+        ])
     }
 }

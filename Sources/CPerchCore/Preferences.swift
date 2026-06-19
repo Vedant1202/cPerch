@@ -84,9 +84,20 @@ public struct Preferences: Equatable, Sendable {
     public var notificationTimeoutSeconds: Int
     public var retention: RetentionWindow
 
+    // Notification kinds (Notifications tab, v0.4 #4). needsInput + error are on by default;
+    // completion is opt-in (calm ethos — finishing is the quiet, expected case).
+    public var notifyOnNeedsInput: Bool
+    public var notifyOnError: Bool
+    public var notifyOnCompletion: Bool
+    /// Show the green "all done" glyph in the menu bar when nothing live needs you (v0.4 #10/#4).
+    public var showAllDoneGlyph: Bool
+    /// Start cPerch at login via SMAppService (v0.4 #7). Opt-in — we never auto-enroll.
+    public var launchAtLogin: Bool
+
     /// Sensible starter defaults: follow the system, a simple list, respect Focus/DND,
     /// auto-dismiss notifications after a calm **10 s**, and keep finished sessions **3 h**
-    /// (the prior hard-coded `SessionStore` retention).
+    /// (the prior hard-coded `SessionStore` retention). Notify on needs-input + error, not
+    /// completion; show the all-done glyph; don't launch at login.
     public static let defaults = Preferences(
         theme: .system, viewMode: .list, dndMode: .system,
         notificationDismiss: .timed, notificationTimeoutSeconds: 10, retention: .h3)
@@ -96,7 +107,10 @@ public struct Preferences: Equatable, Sendable {
 
     public init(theme: AppTheme, viewMode: RosterViewMode, dndMode: DNDMode,
                 notificationDismiss: NotificationDismiss, notificationTimeoutSeconds: Int,
-                retention: RetentionWindow = .h3) {
+                retention: RetentionWindow = .h3,
+                notifyOnNeedsInput: Bool = true, notifyOnError: Bool = true,
+                notifyOnCompletion: Bool = false, showAllDoneGlyph: Bool = true,
+                launchAtLogin: Bool = false) {
         self.theme = theme
         self.viewMode = viewMode
         self.dndMode = dndMode
@@ -104,6 +118,11 @@ public struct Preferences: Equatable, Sendable {
         self.notificationTimeoutSeconds =
             notificationTimeoutSeconds.clamped(to: Preferences.timeoutRange)
         self.retention = retention
+        self.notifyOnNeedsInput = notifyOnNeedsInput
+        self.notifyOnError = notifyOnError
+        self.notifyOnCompletion = notifyOnCompletion
+        self.showAllDoneGlyph = showAllDoneGlyph
+        self.launchAtLogin = launchAtLogin
     }
 
     // MARK: - UserDefaults persistence (keys namespaced under "pref.")
@@ -115,10 +134,17 @@ public struct Preferences: Equatable, Sendable {
         static let dismiss = "pref.notificationDismiss"
         static let timeout = "pref.notificationTimeoutSeconds"
         static let retention = "pref.retentionMinutes"
+        static let notifyNeedsInput = "pref.notifyOnNeedsInput"
+        static let notifyError = "pref.notifyOnError"
+        static let notifyCompletion = "pref.notifyOnCompletion"
+        static let showAllDoneGlyph = "pref.showAllDoneGlyph"
+        static let launchAtLogin = "pref.launchAtLogin"
     }
 
     /// Load from `store`, falling back to `.defaults` for any missing or unrecognized
     /// value (so a partial/older domain still yields a complete, valid Preferences).
+    /// Bool fields guard on `object(forKey:) != nil` so a *missing* key keeps its (often
+    /// `true`) default rather than being clobbered by `bool(forKey:)`'s `false`.
     public static func load(from store: UserDefaults) -> Preferences {
         var p = Preferences.defaults
         if let raw = store.string(forKey: Key.theme), let v = AppTheme(rawValue: raw) { p.theme = v }
@@ -132,6 +158,11 @@ public struct Preferences: Equatable, Sendable {
            let v = RetentionWindow(rawValue: store.integer(forKey: Key.retention)) {
             p.retention = v
         }
+        if store.object(forKey: Key.notifyNeedsInput) != nil { p.notifyOnNeedsInput = store.bool(forKey: Key.notifyNeedsInput) }
+        if store.object(forKey: Key.notifyError) != nil { p.notifyOnError = store.bool(forKey: Key.notifyError) }
+        if store.object(forKey: Key.notifyCompletion) != nil { p.notifyOnCompletion = store.bool(forKey: Key.notifyCompletion) }
+        if store.object(forKey: Key.showAllDoneGlyph) != nil { p.showAllDoneGlyph = store.bool(forKey: Key.showAllDoneGlyph) }
+        if store.object(forKey: Key.launchAtLogin) != nil { p.launchAtLogin = store.bool(forKey: Key.launchAtLogin) }
         return p
     }
 
@@ -143,6 +174,11 @@ public struct Preferences: Equatable, Sendable {
         store.set(notificationDismiss.rawValue, forKey: Key.dismiss)
         store.set(notificationTimeoutSeconds, forKey: Key.timeout)
         store.set(retention.rawValue, forKey: Key.retention)
+        store.set(notifyOnNeedsInput, forKey: Key.notifyNeedsInput)
+        store.set(notifyOnError, forKey: Key.notifyError)
+        store.set(notifyOnCompletion, forKey: Key.notifyCompletion)
+        store.set(showAllDoneGlyph, forKey: Key.showAllDoneGlyph)
+        store.set(launchAtLogin, forKey: Key.launchAtLogin)
     }
 }
 

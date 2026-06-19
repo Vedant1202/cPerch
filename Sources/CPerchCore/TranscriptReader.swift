@@ -58,7 +58,11 @@ public struct TranscriptReader: Sendable {
             lastActivity: lastRecordActivity(in: real) ?? modificationDate(of: url),
             // L2 / DD-L2: the AI-generated title rides as a separate `ai-title` meta
             // record, which realRecords() filters out — so scan the raw tail for it.
-            aiTitle: aiTitle(in: tail)
+            aiTitle: aiTitle(in: tail),
+            // #4: an API-level failure is a synthetic `type:"assistant"` record carrying
+            // `isApiErrorMessage:true` (with a top-level `error`). Scan the RAW tail for it
+            // — NOT `is_error`, which is routine tool failure and would cry wolf.
+            hadApiError: hadApiError(in: tail)
         )
     }
 
@@ -228,6 +232,28 @@ public struct TranscriptReader: Sendable {
             }
         }
         return title
+    }
+
+    /// Whether the tail carries an API-error record (#4). The CLI writes a synthetic
+    /// turn when the API call itself fails: an `type:"assistant"` record flagged
+    /// `isApiErrorMessage:true` that also carries a top-level `error` key. We treat
+    /// EITHER marker as the signal — a top-level `error` key on any record, or the
+    /// explicit `isApiErrorMessage` flag — and scan the RAW tail (the record may be
+    /// filtered by realRecords()' allowlist, and we don't want to depend on that).
+    ///
+    /// Deliberately does NOT key off `is_error`: that is a routine *tool* failure
+    /// (a grep that exited non-zero, a missing file) and fires constantly — using it
+    /// would make the error banner cry wolf (DD/spec §8). Any errored record in the
+    /// tail trips this; the Notifier debounces to one banner per false→true transition.
+    private func hadApiError(in tail: String) -> Bool {
+        for line in tail.split(separator: "\n", omittingEmptySubsequences: true) {
+            guard let data = line.data(using: .utf8),
+                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            else { continue }
+            if (object["isApiErrorMessage"] as? Bool) == true { return true }
+            if object["error"] != nil { return true }   // top-level error key (NSNull included)
+        }
+        return false
     }
 
     private func modificationDate(of url: URL) -> Date {

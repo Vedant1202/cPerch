@@ -24,6 +24,13 @@ struct PreferencesTests {
         #expect(p.notificationTimeoutSeconds == 10)
         #expect(p.retention == .h3)              // 3h — the prior hard-coded default
         #expect(p.retention.seconds == 3 * 3600)
+        // v0.4 batch defaults: notify on needs-input + error, completion opt-in, all-done glyph on,
+        // launch-at-login off.
+        #expect(p.notifyOnNeedsInput == true)
+        #expect(p.notifyOnError == true)
+        #expect(p.notifyOnCompletion == false)
+        #expect(p.showAllDoneGlyph == true)
+        #expect(p.launchAtLogin == false)
     }
 
     @Test("an empty store loads exactly the defaults")
@@ -36,7 +43,10 @@ struct PreferencesTests {
         let store = scratch()
         let p = Preferences(theme: .dark, viewMode: .groupedBySource, dndMode: .notifyAnyway,
                             notificationDismiss: .persisted, notificationTimeoutSeconds: 25,
-                            retention: .h12)
+                            retention: .h12,
+                            notifyOnNeedsInput: false, notifyOnError: false,
+                            notifyOnCompletion: true, showAllDoneGlyph: false,
+                            launchAtLogin: true)
         p.save(to: store)
         #expect(Preferences.load(from: store) == p)
     }

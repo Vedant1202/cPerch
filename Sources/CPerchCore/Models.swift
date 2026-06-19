@@ -40,10 +40,11 @@ public struct Session: Identifiable, Sendable, Equatable {
     public var blockedSince: Date?     // entered needsInput at — drives "blocked Nm"
     public var pid: Int?
     public var host: HostRef
+    public var hadApiError: Bool       // tail carried an API-error record (isApiErrorMessage) — #4 notif trigger
 
     public init(id: String, projectPath: String, displayName: String, source: SessionSource,
                 status: DerivedStatus, latestMessage: String?, lastActivity: Date,
-                blockedSince: Date?, pid: Int?, host: HostRef) {
+                blockedSince: Date?, pid: Int?, host: HostRef, hadApiError: Bool = false) {
         self.id = id
         self.projectPath = projectPath
         self.displayName = displayName
@@ -54,6 +55,7 @@ public struct Session: Identifiable, Sendable, Equatable {
         self.blockedSince = blockedSince
         self.pid = pid
         self.host = host
+        self.hadApiError = hadApiError
     }
 }
 

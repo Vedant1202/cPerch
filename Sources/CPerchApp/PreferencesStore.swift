@@ -11,6 +11,7 @@ final class PreferencesStore: ObservableObject {
             guard preferences != oldValue else { return }
             preferences.save(to: defaults)
             applyTheme()
+            applyLoginItem()
             onChange?()
         }
     }
@@ -29,6 +30,14 @@ final class PreferencesStore: ObservableObject {
     /// appearance means "follow the system" (the default).
     func applyTheme() {
         NSApp.appearance = preferences.theme.nsAppearance
+    }
+
+    /// Enroll/remove cPerch as a login item to match `launchAtLogin` (v0.4 #7). Driven from
+    /// `didSet`, which does NOT fire during init — so we (un)register only when the user flips
+    /// the toggle, never on every launch (the OS persists the choice). Errors are swallowed
+    /// inside `LoginItem`; a login-item hiccup must never disturb the app.
+    func applyLoginItem() {
+        LoginItem.setEnabled(preferences.launchAtLogin)
     }
 }
 
