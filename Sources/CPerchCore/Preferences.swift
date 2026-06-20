@@ -120,6 +120,10 @@ public struct Preferences: Equatable, Sendable {
     /// Reduce-transparency override (A6) — gates the roster's material background.
     public var reduceTransparency: A11yOverride
 
+    /// Whether the one-time in-app Help hint has been shown (v0.6). Set true after the first popover
+    /// open so the "?" callout never repeats.
+    public var hasSeenHelpHint: Bool
+
     /// Sensible starter defaults: follow the system, a simple list, respect Focus/DND,
     /// auto-dismiss notifications after a calm **10 s**, and keep finished sessions **3 h**
     /// (the prior hard-coded `SessionStore` retention). Notify on needs-input + error, not
@@ -138,7 +142,8 @@ public struct Preferences: Equatable, Sendable {
                 notifyOnCompletion: Bool = false, showAllDoneGlyph: Bool = true,
                 launchAtLogin: Bool = false,
                 showStatusShapes: Bool = true, highContrast: A11yOverride = .system,
-                reduceMotion: A11yOverride = .system, reduceTransparency: A11yOverride = .system) {
+                reduceMotion: A11yOverride = .system, reduceTransparency: A11yOverride = .system,
+                hasSeenHelpHint: Bool = false) {
         self.theme = theme
         self.viewMode = viewMode
         self.dndMode = dndMode
@@ -155,6 +160,7 @@ public struct Preferences: Equatable, Sendable {
         self.highContrast = highContrast
         self.reduceMotion = reduceMotion
         self.reduceTransparency = reduceTransparency
+        self.hasSeenHelpHint = hasSeenHelpHint
     }
 
     // MARK: - UserDefaults persistence (keys namespaced under "pref.")
@@ -175,6 +181,7 @@ public struct Preferences: Equatable, Sendable {
         static let highContrast = "pref.highContrast"
         static let reduceMotion = "pref.reduceMotion"
         static let reduceTransparency = "pref.reduceTransparency"
+        static let hasSeenHelpHint = "pref.hasSeenHelpHint"
     }
 
     /// Load from `store`, falling back to `.defaults` for any missing or unrecognized
@@ -203,6 +210,7 @@ public struct Preferences: Equatable, Sendable {
         if let raw = store.string(forKey: Key.highContrast), let v = A11yOverride(rawValue: raw) { p.highContrast = v }
         if let raw = store.string(forKey: Key.reduceMotion), let v = A11yOverride(rawValue: raw) { p.reduceMotion = v }
         if let raw = store.string(forKey: Key.reduceTransparency), let v = A11yOverride(rawValue: raw) { p.reduceTransparency = v }
+        if store.object(forKey: Key.hasSeenHelpHint) != nil { p.hasSeenHelpHint = store.bool(forKey: Key.hasSeenHelpHint) }
         return p
     }
 
@@ -223,6 +231,7 @@ public struct Preferences: Equatable, Sendable {
         store.set(highContrast.rawValue, forKey: Key.highContrast)
         store.set(reduceMotion.rawValue, forKey: Key.reduceMotion)
         store.set(reduceTransparency.rawValue, forKey: Key.reduceTransparency)
+        store.set(hasSeenHelpHint, forKey: Key.hasSeenHelpHint)
     }
 }
 

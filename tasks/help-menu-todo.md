@@ -3,12 +3,12 @@
 Tracks [help-menu-plan.md](help-menu-plan.md) · spec [help-menu-v0.6.md](../docs/specs/help-menu-v0.6.md).
 Branch `help-menu-v0.6` off `main`. **Not started** — awaiting go-ahead.
 
-## Phase 0 — Foundation (serial)
-- [ ] **T0.1** `Preferences`: add `hasSeenHelpHint: Bool` (default false) + `Key`/`load`/`save`/`init`
-- [ ] **T0.2** `Diagnostics.swift` (new): `diagnosticsText(appVersion:osVersion:)` → "cPerch <v>\nmacOS <os>" (no identifiers)
-- [ ] **T0.3** Core tests: extend `PreferencesTests` (default + round-trip); new `DiagnosticsTests`
-- [ ] **T0.4** `build.sh`: `VERSION` `0.0.1` → `0.5.0`
-- [ ] **C0 checkpoint:** `swift build` + `./scripts/test.sh` + `./build.sh` green; bundle `CFBundleShortVersionString` = 0.5.0; app unchanged. Commit.
+## Phase 0 — Foundation (serial) ✅
+- [x] **T0.1** `Preferences`: add `hasSeenHelpHint: Bool` (default false) + `Key`/`load`/`save`/`init`
+- [x] **T0.2** `Diagnostics.swift` (new): `diagnosticsText(appVersion:osVersion:)` → "cPerch <v>\nmacOS <os>" (no identifiers)
+- [x] **T0.3** Core tests: extend `PreferencesTests` (default + round-trip); new `DiagnosticsTests`
+- [x] **T0.4** `build.sh`: `VERSION` `0.0.1` → `0.5.0`
+- [x] **C0 checkpoint:** `swift build` + `./scripts/test.sh` (**143 tests**) + `./build.sh` green; bundle `CFBundleShortVersionString` = 0.5.0; app unchanged. Committed.
 
 ## Phase 1 — UI (serial)
 - [ ] **T1.1** `HelpView.swift` (new): 7 sections; legend via real symbols; Open Settings; Privacy + issue links (`NSWorkspace.open` + `arrow.up.right`); Copy diagnostics (`NSPasteboard` + `diagnosticsText` + bundle version); About (version + MIT); back control

@@ -36,6 +36,8 @@ struct PreferencesTests {
         #expect(p.highContrast == .system)
         #expect(p.reduceMotion == .system)
         #expect(p.reduceTransparency == .system)
+        // v0.6 in-app Help: the first-run hint hasn't been seen yet.
+        #expect(p.hasSeenHelpHint == false)
     }
 
     @Test("an empty store loads exactly the defaults")
@@ -53,7 +55,8 @@ struct PreferencesTests {
                             notifyOnCompletion: true, showAllDoneGlyph: false,
                             launchAtLogin: true,
                             showStatusShapes: false, highContrast: .on,
-                            reduceMotion: .off, reduceTransparency: .on)
+                            reduceMotion: .off, reduceTransparency: .on,
+                            hasSeenHelpHint: true)
         p.save(to: store)
         #expect(Preferences.load(from: store) == p)
     }
