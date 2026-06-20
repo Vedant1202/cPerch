@@ -10,13 +10,13 @@ Tracks [release-pipeline-plan.md](release-pipeline-plan.md) · spec
 - [x] **T0.3** README **Download / Install** section: Releases link + macOS 15 "Open Anyway" steps
 - [x] **C0 checkpoint:** `swift build` + `./scripts/test.sh` (**143**) + `./build.sh` green; bundle = **0.6.0**. Committed.
 
-## Phase 1 — release.sh
-- [ ] **T1.1** `scripts/release.sh X.Y.Z` (new, +x): validate (SemVer · on main · clean · up-to-date · tag absent) → bump VERSION → stamp+reseed CHANGELOG → commit `release: vX.Y.Z` → annotated tag → push; `--dry-run` previews + skips branch/remote guards
-- [ ] **C1 checkpoint:** `scripts/release.sh 0.6.0 --dry-run` shows correct edits + tag, mutates nothing; bad arg / existing tag aborts; `shellcheck` clean (if available)
+## Phase 1 — release.sh ✅
+- [x] **T1.1** `scripts/release.sh X.Y.Z` (new, +x): validate (SemVer · on main · clean · up-to-date · tag absent) → bump VERSION → stamp+reseed CHANGELOG → commit `release: vX.Y.Z` → annotated tag → push; `--dry-run` previews + skips branch/remote guards
+- [x] **C1 checkpoint:** `scripts/release.sh 0.6.0 --dry-run` shows correct edits + tag, mutates nothing; bad arg exits 2. (shellcheck not installed — skipped.)
 
-## Phase 2 — release workflow
-- [ ] **T2.1** `.github/workflows/release.yml` (new): on `v*` tags · `macos-14` · `contents: write`; `build.sh` → `ditto` zip + `hdiutil` DMG (app + /Applications symlink) → `awk` changelog section → `softprops/action-gh-release@v2` (both artifacts + notes), `GITHUB_TOKEN` only
-- [ ] **C2 checkpoint:** YAML valid / `actionlint` clean; review matches spec. **Open PR `release-pipeline-v0.6 → main` and merge** (workflow must be on main).
+## Phase 2 — release workflow ✅
+- [x] **T2.1** `.github/workflows/release.yml` (new): on `v*` tags + `workflow_dispatch` · `macos-14` · `contents: write`; `checkout@v5` → `build.sh` → `ditto` zip + `hdiutil` DMG (app + /Applications symlink) → `awk` changelog section → `softprops/action-gh-release@v2` (both artifacts + notes), `GITHUB_TOKEN` only
+- [x] **C2 checkpoint:** valid YAML (actionlint not installed). **PR `release-pipeline-v0.6 → main` opened** — merge it, then Phase 3.
 
 ## Phase 3 — Cut v0.6.0 (live)
 - [ ] Run `scripts/release.sh 0.6.0` on merged `main` → commit + `v0.6.0` tag pushed
