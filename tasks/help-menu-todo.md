@@ -10,11 +10,11 @@ Branch `help-menu-v0.6` off `main`. **Not started** — awaiting go-ahead.
 - [x] **T0.4** `build.sh`: `VERSION` `0.0.1` → `0.5.0`
 - [x] **C0 checkpoint:** `swift build` + `./scripts/test.sh` (**143 tests**) + `./build.sh` green; bundle `CFBundleShortVersionString` = 0.5.0; app unchanged. Committed.
 
-## Phase 1 — UI (serial)
-- [ ] **T1.1** `HelpView.swift` (new): 7 sections; legend via real symbols; Open Settings; Privacy + issue links (`NSWorkspace.open` + `arrow.up.right`); Copy diagnostics (`NSPasteboard` + `diagnosticsText` + bundle version); About (version + MIT); back control
-- [ ] **T1.2** `RosterView.swift`: footer `questionmark.circle` button; `@State showingHelp` switch → render `HelpView`; `showHelpHint` param + auto-dismiss TTL callout near the "?"
-- [ ] **T1.3** `MenuBarController.swift`: first-popover-open hint trigger + persist `hasSeenHelpHint`; `makeRoster` passes `showHelpHint`
-- [ ] **C1 checkpoint:** `swift build` + `./scripts/test.sh` + `./build.sh` green; boundary audit (Core Foundation-only; no network; only `NSWorkspace.open`/`NSPasteboard`; no new TCC permission / `~/.claude` reads). Commit.
+## Phase 1 — UI (serial) ✅
+- [x] **T1.1** `HelpView.swift` (new): 7 sections; legend via real symbols; Open Settings; Privacy + issue links (`NSWorkspace.open` + `arrow.up.right`); Copy diagnostics (`NSPasteboard` + `diagnosticsText` + bundle version); About (version + MIT); back control
+- [x] **T1.2** `RosterView.swift`: footer `questionmark.circle` button; `@State showingHelp` switch → render `HelpView`; `showHelpHint` param + first-run callout overlay near the "?"
+- [x] **T1.3** `MenuBarController.swift`: first-popover-open hint trigger (controller-owned TTL) + persist `hasSeenHelpHint`; `makeRoster` passes `showHelpHint`; `hosting.sizingOptions = .preferredContentSize` so the popover resizes for Help
+- [x] **C1 checkpoint:** `swift build` + `./scripts/test.sh` (**143 tests**) + `./build.sh` green; boundary audit clean (Core Foundation-only; no network; only `NSWorkspace.open`/`NSPasteboard`; no new TCC permission / `~/.claude` reads). Committed.
 
 ## Phase 2 — On-device sign-off (manual, from `dist/CPerch.app`)
 - [ ] "?" opens Help; back returns; list state preserved; content scrolls

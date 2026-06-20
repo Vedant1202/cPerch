@@ -28,10 +28,16 @@ struct RosterView: View {
     /// Defaulted so the existing labeled call sites (and the previews) compile unchanged;
     /// the resolved a11y state is derived from this + the SwiftUI `@Environment` values below.
     var preferences: Preferences = .defaults
+    /// One-time first-run hint (v0.6): when true, show the "New here? Tap for help." callout near the
+    /// "?". MenuBarController drives this flag (and its auto-dismiss) on the first popover open.
+    var showHelpHint: Bool = false
 
     /// Collapsed source-group headers (by `SessionSource.rawValue`) for the grouped view.
     /// `@State` so it survives roster refreshes (SwiftUI preserves it across rootView updates).
     @State private var collapsedSources: Set<String> = []
+    /// Whether the popover is showing in-app Help (v0.6) instead of the session list. `@State` so it
+    /// survives roster refreshes, like `collapsedSources`.
+    @State private var showingHelp = false
 
     // MARK: - Accessibility environment (v0.5)
     //
@@ -94,6 +100,22 @@ struct RosterView: View {
     }
 
     var body: some View {
+        Group {
+            if showingHelp {
+                HelpView(onBack: { showingHelp = false },
+                         onOpenSettings: onSettings,
+                         maxHeight: maxListHeight)
+            } else {
+                listBody
+            }
+        }
+        .frame(width: 340)
+        .background(rosterBackground)
+    }
+
+    /// The session list — the popover's default content; in-app Help (v0.6) replaces it when
+    /// `showingHelp`.
+    private var listBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider().overlay(dividerColor)
@@ -113,8 +135,25 @@ struct RosterView: View {
             Divider().overlay(dividerColor)
             footer
         }
-        .frame(width: 340)
-        .background(rosterBackground)
+        .overlay(alignment: .bottomLeading) { helpHintCallout }
+    }
+
+    /// The one-time first-run callout near the "?" (v0.6). Visible only while `showHelpHint` is true —
+    /// MenuBarController owns the flag and its auto-dismiss; opening Help replaces the list, so the
+    /// callout goes away then too.
+    @ViewBuilder private var helpHintCallout: some View {
+        if showHelpHint {
+            Text("New here? Tap for help.")
+                .font(TokenFonts.ui(11, weight: .medium))
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(NSColor.windowBackgroundColor))
+                        .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(TokenColors.separator, lineWidth: 1))
+                .padding(.leading, 12).padding(.bottom, 42)
+        }
     }
 
     /// The roster surface (A6): a solid window background when Reduce Transparency is effective,
@@ -239,6 +278,14 @@ struct RosterView: View {
             .buttonStyle(.plain)
             .foregroundStyle(TokenColors.secondaryText)
             .help("Settings")
+
+            Button { showingHelp = true } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(TokenColors.secondaryText)
+            .help("Help")
 
             Spacer()
 
