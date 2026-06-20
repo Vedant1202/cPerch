@@ -21,6 +21,11 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Run JavaScript actions on Node 24 (already the runner default), silencing the Node 20
+# deprecation notice from actions that still declare node20.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
