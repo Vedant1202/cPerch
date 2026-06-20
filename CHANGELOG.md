@@ -6,6 +6,8 @@ All notable changes to cPerch are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-19
+
 ### Added
 - **In-app Help.** A "?" in the menu-bar popover opens a built-in Help panel — what each status icon
   means, the global shortcut (⌘⌥`), an overview of Settings, the accessibility options, a link to the
