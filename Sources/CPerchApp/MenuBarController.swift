@@ -18,6 +18,8 @@ final class MenuBarController: NSObject {
     private let notifier = Notifier()
     private var previousSessions: [Session] = []
     private var hotkey: GlobalHotkey?
+    /// v0.6 — true while the one-time first-run Help hint is on screen (controller-owned TTL).
+    private var helpHintActive = false
     private lazy var settingsWindow = SettingsWindowController(store: preferences)
 
     init(store: SessionProviding, preferences: PreferencesStore) {
@@ -33,6 +35,9 @@ final class MenuBarController: NSObject {
         popover.animates = !effective(preferences.preferences.reduceMotion,
                                       system: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
         popover.contentViewController = hosting
+        // Let SwiftUI drive the popover size so it resizes when the content swaps between the session
+        // list and the (taller) in-app Help view (v0.6). Each caps its own height to the screen.
+        hosting.sizingOptions = [.preferredContentSize]
 
         if let button = statusItem.button {
             button.target = self
@@ -182,8 +187,22 @@ final class MenuBarController: NSObject {
             onJump: { [weak self] session in self?.jump(to: session) },
             onSettings: { [weak self] in self?.openSettings() },
             onQuit: { NSApplication.shared.terminate(nil) },
-            preferences: preferences.preferences
+            preferences: preferences.preferences,
+            showHelpHint: helpHintActive
         )
+    }
+
+    /// First-run Help hint (v0.6): the first time the popover ever opens, flag the "?" callout, persist
+    /// `hasSeenHelpHint` so it never returns, and auto-dismiss after a few seconds.
+    private func maybeShowHelpHint() {
+        guard !preferences.preferences.hasSeenHelpHint else { return }
+        helpHintActive = true
+        preferences.preferences.hasSeenHelpHint = true   // persists via PreferencesStore's didSet
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) { [weak self] in
+            guard let self else { return }
+            self.helpHintActive = false
+            self.updateRoster()
+        }
     }
 
     /// Open the Settings window (closing the transient popover first so it doesn't vanish
@@ -219,12 +238,10 @@ final class MenuBarController: NSObject {
         // active). Activate first so it appears above other apps and is key. Harmless
         // on the click path, where we're already active.
         NSApp.activate(ignoringOtherApps: true)
+        maybeShowHelpHint()
         updateRoster()
-        // Size the popover to the SwiftUI content (RosterView is a fixed 340pt wide); the
-        // scrollable list is capped at a screen-relative height so a long roster scrolls
-        // instead of growing past the display.
-        let maxH = currentMaxListHeight()
-        popover.contentSize = hosting.sizeThatFits(in: NSSize(width: 340, height: maxH + 120))
+        // The popover sizes itself to the SwiftUI content (`hosting.sizingOptions`), so it fits both
+        // the session list and the taller Help view; each caps its height to the screen.
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
     }

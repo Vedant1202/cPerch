@@ -28,10 +28,16 @@ struct RosterView: View {
     /// Defaulted so the existing labeled call sites (and the previews) compile unchanged;
     /// the resolved a11y state is derived from this + the SwiftUI `@Environment` values below.
     var preferences: Preferences = .defaults
+    /// One-time first-run hint (v0.6): when true, show the "New here? Tap for help." callout near the
+    /// "?". MenuBarController drives this flag (and its auto-dismiss) on the first popover open.
+    var showHelpHint: Bool = false
 
     /// Collapsed source-group headers (by `SessionSource.rawValue`) for the grouped view.
     /// `@State` so it survives roster refreshes (SwiftUI preserves it across rootView updates).
     @State private var collapsedSources: Set<String> = []
+    /// Whether the popover is showing in-app Help (v0.6) instead of the session list. `@State` so it
+    /// survives roster refreshes, like `collapsedSources`.
+    @State private var showingHelp = false
 
     // MARK: - Accessibility environment (v0.5)
     //
@@ -94,6 +100,22 @@ struct RosterView: View {
     }
 
     var body: some View {
+        Group {
+            if showingHelp {
+                HelpView(onBack: { showingHelp = false },
+                         onOpenSettings: onSettings,
+                         maxHeight: maxListHeight)
+            } else {
+                listBody
+            }
+        }
+        .frame(width: 340)
+        .background(rosterBackground)
+    }
+
+    /// The session list — the popover's default content; in-app Help (v0.6) replaces it when
+    /// `showingHelp`.
+    private var listBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider().overlay(dividerColor)
@@ -113,8 +135,25 @@ struct RosterView: View {
             Divider().overlay(dividerColor)
             footer
         }
-        .frame(width: 340)
-        .background(rosterBackground)
+    }
+
+    /// The one-time first-run callout (v0.6): a small accent bubble with a downward tail that points
+    /// at the highlighted "?" in the footer. Anchored to the "?" button (see `footer`), shown only
+    /// while `showHelpHint` is true — MenuBarController owns the flag and its auto-dismiss; opening
+    /// Help replaces the list, so the callout goes away then too.
+    private var helpHintBubble: some View {
+        let accent = Color(NSColor.controlAccentColor)
+        return VStack(alignment: .leading, spacing: 0) {
+            Text("New here? Tap for help.")
+                .font(TokenFonts.ui(11, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(RoundedRectangle(cornerRadius: 8).fill(accent))
+            DownTriangle().fill(accent).frame(width: 12, height: 6).padding(.leading, 11)
+        }
+        .fixedSize()
+        .shadow(color: .black.opacity(0.22), radius: 6, y: 2)
+        .allowsHitTesting(false)
     }
 
     /// The roster surface (A6): a solid window background when Reduce Transparency is effective,
@@ -240,6 +279,20 @@ struct RosterView: View {
             .foregroundStyle(TokenColors.secondaryText)
             .help("Settings")
 
+            Button { showingHelp = true } label: {
+                Image(systemName: showHelpHint ? "questionmark.circle.fill" : "questionmark.circle")
+                    .font(.system(size: 12))
+                    .foregroundStyle(showHelpHint ? Color.white : TokenColors.secondaryText)
+                    .padding(2)
+                    .background { if showHelpHint { Circle().fill(Color(NSColor.controlAccentColor)) } }
+            }
+            .buttonStyle(.plain)
+            .help("Help")
+            // First-run callout, anchored just above the "?" with its tail pointing down at it (v0.6).
+            .overlay(alignment: .bottomLeading) {
+                if showHelpHint { helpHintBubble.offset(x: -3, y: -34) }
+            }
+
             Spacer()
 
             Button(action: onQuit) {
@@ -251,6 +304,18 @@ struct RosterView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
+    }
+}
+
+/// A small downward-pointing triangle — the tail of the first-run Help callout (v0.6).
+private struct DownTriangle: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.midX, y: r.maxY))
+        p.closeSubpath()
+        return p
     }
 }
 
