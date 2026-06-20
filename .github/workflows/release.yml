@@ -1,0 +1,85 @@
+name: Release
+
+# Cut a release by pushing a version tag (scripts/release.sh does this). This builds the app on a
+# macOS runner, packages a zip + a DMG, and publishes a GitHub Release with the matching CHANGELOG
+# section as the notes. workflow_dispatch lets you re-run for an existing tag (fix-forward).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing version tag to (re)build, e.g. v0.6.0"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Resolve version
+        id: v
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the app bundle
+        run: ./build.sh
+
+      - name: Package zip + DMG
+        id: pkg
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.v.outputs.version }}"
+          ZIP="CPerch-$VERSION.zip"
+          DMG="CPerch-$VERSION.dmg"
+
+          # Zip with ditto so the .app's symlinks/metadata survive (plain `zip` mangles bundles).
+          ditto -c -k --sequesterRsrc --keepParent dist/CPerch.app "$ZIP"
+
+          # DMG: app + a drag-to-Applications symlink, via hdiutil (zero external deps).
+          STAGE="$(mktemp -d)"
+          cp -R dist/CPerch.app "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "cPerch" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
+
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog notes
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.v.outputs.version }}"
+          # Print the body of the "## [VERSION]" section, stopping at the next "## [" heading.
+          awk -v ver="$VERSION" '
+            $0 ~ ("^## \\[" ver "\\]") { grab = 1; next }
+            grab && /^## \[/ { exit }
+            grab { print }
+          ' CHANGELOG.md > notes.md
+          # Trim leading/trailing blank lines; fall back to a stub if the section was empty.
+          sed -i '' -e '/./,$!d' notes.md 2>/dev/null || true
+          [ -s notes.md ] || echo "cPerch $VERSION" > notes.md
+          echo "----- release notes -----"; cat notes.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.v.outputs.tag }}
+          name: cPerch ${{ steps.v.outputs.version }}
+          body_path: notes.md
+          files: |
+            ${{ steps.pkg.outputs.zip }}
+            ${{ steps.pkg.outputs.dmg }}

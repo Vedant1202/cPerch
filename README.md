@@ -51,8 +51,23 @@ was that one in again?"* cPerch answers that without you switching apps.
 
 ## Install
 
-No packaged release yet. Until one is published on the [Releases page](https://github.com/Vedant1202/cPerch/releases),
-build from source:
+### Download
+
+Grab the latest **`.dmg`** (drag cPerch to Applications) or **`.zip`** from the
+[Releases page](https://github.com/Vedant1202/cPerch/releases/latest).
+
+**First launch (one-time).** cPerch isn't notarized by Apple yet, so macOS blocks the first open:
+
+1. Open cPerch — macOS shows a warning and refuses. Click **Done**.
+2. Open **System Settings → Privacy & Security**, scroll to the bottom, and click **Open Anyway** next to
+   the cPerch message.
+3. Confirm once more. cPerch opens normally from then on.
+
+_(A notarized build that skips this step is planned once the project has an Apple Developer account.)_
+
+### Build from source
+
+Command Line Tools only — no full Xcode:
 
 ```bash
 git clone https://github.com/Vedant1202/cPerch.git
