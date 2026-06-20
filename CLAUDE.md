@@ -128,6 +128,10 @@ Swift sources (`Package.swift`, `Sources/…`, `build.sh`) land here once implem
   no-op; `swift run CPerchApp --print` dumps the live sessions headless.
 - Reading the user's own `~/.claude` transcripts is core to dev/testing — handle that data carefully
   and never exfiltrate it.
+- **Copy / wording (user-facing).** Describe the privacy stance as **"privacy-focused"** (or "private by
+  design") — do **not** use the phrase **"no special permissions"** (or "no permissions"). Frame it as a
+  positive property, not the absence of one. Applies to the README, the website, release notes, and
+  in-app text.
 
 ## Out of scope (v0)
 
