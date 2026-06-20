@@ -4,11 +4,11 @@ Tracks [release-pipeline-plan.md](release-pipeline-plan.md) · spec
 [release-pipeline-v0.6.md](../docs/specs/release-pipeline-v0.6.md). Branch `release-pipeline-v0.6` off
 `main` (sync to `origin/main` first). **Not started.**
 
-## Phase 0 — Docs & config
-- [ ] **T0.1** `CHANGELOG.md` (new): Keep a Changelog; `[Unreleased]` + backfilled `[0.6.0]`…`[0.1.0]` (spec §4)
-- [ ] **T0.2** `build.sh` `VERSION` `0.5.0` → `0.6.0`
-- [ ] **T0.3** README **Download / Install** section: Releases link + macOS 15 "Open Anyway" steps
-- [ ] **C0 checkpoint:** `swift build` + `./scripts/test.sh` (143) + `./build.sh` green; bundle = 0.6.0
+## Phase 0 — Docs & config ✅
+- [x] **T0.1** `CHANGELOG.md` (new): Keep a Changelog; `[Unreleased]` (0.6.0 help batch) + backfilled `[0.5.0]`…`[0.1.0]`
+- [x] **T0.2** `build.sh` `VERSION` `0.5.0` → `0.6.0`
+- [x] **T0.3** README **Download / Install** section: Releases link + macOS 15 "Open Anyway" steps
+- [x] **C0 checkpoint:** `swift build` + `./scripts/test.sh` (**143**) + `./build.sh` green; bundle = **0.6.0**. Committed.
 
 ## Phase 1 — release.sh
 - [ ] **T1.1** `scripts/release.sh X.Y.Z` (new, +x): validate (SemVer · on main · clean · up-to-date · tag absent) → bump VERSION → stamp+reseed CHANGELOG → commit `release: vX.Y.Z` → annotated tag → push; `--dry-run` previews + skips branch/remote guards
