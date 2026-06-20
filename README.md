@@ -10,7 +10,7 @@
 cPerch is a native macOS menu-bar app that watches your running Claude Code sessions — across terminal
 windows and the Claude desktop app — and surfaces them in one place. A glance at your menu bar tells you
 which agent is waiting on you, which is still working, and which has finished; one click jumps to the
-exact existing window. Detection is **zero-permission** and **fully local**.
+exact existing window. Detection is **privacy-focused** and **fully local**.
 
 It's built to solve a specific annoyance: when you're babysitting several agents at once, *"which window
 was that one in again?"* cPerch answers that without you switching apps.
@@ -98,7 +98,7 @@ than one session needs you.
 ## How it works
 
 cPerch detects sessions from the local filesystem, so it works regardless of which app hosts a session
-and needs no special permissions. It merges three signals on each session's id:
+and stays privacy-focused. It merges three signals on each session's id:
 
 - **Process scan** (`ps`/`lsof`) — liveness and the owning terminal tab.
 - **Registry** (`~/.claude/sessions/<pid>.json`) — the process-to-session bridge.
@@ -112,7 +112,7 @@ decisions are documented under [`docs/`](docs/) (start with [`SPEC.md`](SPEC.md)
 
 - **Local only.** cPerch never makes network requests and never transmits transcript content.
 - **Read-only.** It reads `~/.claude`; it never writes to or mutates it.
-- **No sensitive permissions.** No Accessibility (AX) permission, no Input Monitoring, no auth tokens.
+- **Privacy-focused.** No Accessibility (AX) permission, no Input Monitoring, no auth tokens.
   (Focusing a terminal tab uses Apple Events, which prompts once via the standard macOS Automation
   dialog.)
 - **Not sandboxed**, because the App Store sandbox would forbid reading `~/.claude` and focusing other
