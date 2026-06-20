@@ -15,7 +15,7 @@ exact existing window. Detection is **zero-permission** and **fully local**.
 It's built to solve a specific annoyance: when you're babysitting several agents at once, *"which window
 was that one in again?"* cPerch answers that without you switching apps.
 
-<!-- Add a screenshot here once captured, e.g. docs/assets/roster.png -->
+<!-- Add a screenshot here once captured, e.g. docs/assets/cperch.png -->
 > _Screenshots coming with the first release._
 
 ## Features
@@ -36,7 +36,7 @@ was that one in again?"* cPerch answers that without you switching apps.
   desktop app). It never spawns a duplicate.
 - **Calm notifications** — opt-in by kind (needs-input, error, completion), Focus/Do-Not-Disturb aware,
   with tap-to-open.
-- **Global hotkey** — toggle the roster from anywhere with `⌘⌥\`` (no extra permission required).
+- **Global hotkey** — open cPerch from anywhere with `⌘⌥\`` (no extra permission required).
 - **Launch at login** — optional, off by default.
 - **Accessibility-first** — shape-coded status, a high-contrast mode that follows the system setting,
   VoiceOver labels, and reduce-motion / reduce-transparency support.
@@ -65,12 +65,12 @@ cPerch runs as a menu-bar accessory (no Dock icon). Look for its dot in the top-
 
 ## Usage
 
-1. **Open the roster** — click the cPerch icon in the menu bar, or press `⌘⌥\``.
-2. **Read the list** — sessions are sorted needs-you-first. Each row shows the status indicator, the
-   project name, the latest message, and a "blocked Nm" wait time for anything awaiting you.
+1. **Open cPerch** — click the cPerch icon in the menu bar, or press `⌘⌥\``.
+2. **Read the list** — sessions are sorted with the ones waiting on you first. Each one shows the status
+   indicator, the project name, the latest message, and how long a waiting session has been waiting.
 3. **Jump** — click **Jump** on a row to focus that session's existing window. Terminal sessions focus
    the exact tab; desktop sessions bring the Claude app forward.
-4. **Settings** — open from the gear in the roster footer:
+4. **Settings** — open from the gear at the bottom of the cPerch window:
    - **General** — appearance (System/Light/Dark), session list layout (simple or grouped by source),
      how long finished sessions linger, and launch-at-login.
    - **Notifications** — which events notify you, Focus/DND behavior, and how long banners persist.
@@ -123,7 +123,7 @@ Repository layout:
 
 ```
 Sources/CPerchCore/   detection + merge logic (pure, tested)
-Sources/CPerchApp/    menu bar, roster, settings, notifications (AppKit + SwiftUI)
+Sources/CPerchApp/    menu bar, session list, settings, notifications (AppKit + SwiftUI)
 Tests/                swift-testing unit tests + synthetic fixtures
 docs/                 spec, design tokens, decision log, handover guides
 scripts/              test + fixture-capture helpers
@@ -131,7 +131,7 @@ scripts/              test + fixture-capture helpers
 
 ## Project status
 
-Pre-release. The core experience — detection, the menu-bar indicator, the roster, Jump, notifications,
+Pre-release. The core experience — detection, the menu-bar indicator, the session list, Jump, notifications,
 and accessibility — is built and runs. Still ahead: a packaged, Developer-ID-notarized release. See the
 [handover guides](docs/handover-v0.5.md) for the current state and what's next.
 

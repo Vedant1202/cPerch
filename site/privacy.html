@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("cperch-theme");
+      if (t === "light" || t === "dark") {
+        document.documentElement.setAttribute("data-theme", t);
+        var m = document.querySelector('meta[name="color-scheme"]');
+        if (m) m.content = t;
+      }
+    } catch (e) {}
+  })();
+</script>
+<title>Privacy Policy — cPerch</title>
+<meta name="description" content="cPerch's privacy policy. cPerch runs entirely on your Mac, collects no data, and sends nothing over the network.">
+<link rel="stylesheet" href="styles.css">
+<script src="theme.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#fff" stroke="rgba(0,0,0,.12)"/><path d="M7 12.4l3.1 3.1 6.7-7.3" stroke="#5d7142" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      cPerch
+    </a>
+    <nav class="top" aria-label="Primary">
+      <a class="hide-sm" href="./#features">Features</a>
+      <a class="hide-sm" href="./#privacy">Privacy</a>
+      <a href="https://github.com/Vedant1202/cPerch">GitHub</a>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="prose">
+  <div class="narrow">
+    <a class="backlink" href="./">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to cPerch
+    </a>
+
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: June 19, 2026</p>
+
+    <div class="tldr">
+      <p><strong>In short:</strong> cPerch runs entirely on your Mac. It reads your local Claude files to find your sessions, and it does not collect, store, share, or transmit any of your data. There are no accounts, no analytics, and no servers.</p>
+    </div>
+
+    <h2>1. Who this policy is for</h2>
+    <p>This policy explains how the cPerch macOS app and this website handle your information. cPerch is an open-source app distributed through GitHub. It is not operated as a hosted service.</p>
+
+    <h2>2. What cPerch reads on your Mac</h2>
+    <p>To show your running Claude Code sessions, cPerch reads files that Claude already stores on your computer, inside your home folder under <code>~/.claude</code>:</p>
+    <ul>
+      <li><strong>Session files</strong> — small files that record which sessions are running and basic details such as the project folder and process id.</li>
+      <li><strong>Transcript files</strong> — the conversation logs for each session, which cPerch reads to show the latest message and the session's status.</li>
+    </ul>
+    <p>cPerch also lists running processes on your Mac (the same information the <code>ps</code> command shows) to check which sessions are still alive. All of this happens locally, on your device.</p>
+
+    <h2>3. What cPerch collects</h2>
+    <p><strong>Nothing.</strong> cPerch does not collect, record, or build a profile of you. It reads the files above only to display your current sessions, and it does not copy that content anywhere.</p>
+
+    <h2>4. What cPerch sends over the network</h2>
+    <p><strong>Nothing.</strong> cPerch makes no network connections. It has no telemetry, no crash reporting, and no "phone home" behavior. Your messages, project names, and file paths never leave your Mac.</p>
+
+    <h2>5. How cPerch uses your information</h2>
+    <p>cPerch uses what it reads only to draw the list of sessions, their status, and the latest message — on screen, on your Mac, while the app is running. It does not use your information for advertising, analytics, training, or any other purpose.</p>
+
+    <h2>6. Permissions</h2>
+    <p>cPerch is designed to need as little access as possible. It does not request the macOS Accessibility permission or Input Monitoring, and it never accesses your Claude login or authentication tokens. The one standard macOS prompt you may see is the system "Automation" dialog the first time cPerch focuses a terminal window for you; you can decline it and still use the rest of the app.</p>
+
+    <h2>7. Storage and security</h2>
+    <p>cPerch does not maintain its own database of your sessions. Your settings (such as theme and notification choices) are stored locally by macOS for the app. Because nothing is transmitted or stored off your device, your session data stays under your control at all times. Removing the app removes cPerch from your Mac; it does not touch your <code>~/.claude</code> files.</p>
+
+    <h2>8. Third parties</h2>
+    <p>The cPerch app includes no third-party analytics, advertising, or tracking software. It does not share data with anyone, because it does not collect or transmit data.</p>
+
+    <h2>9. This website</h2>
+    <p>This website (the page you are reading) is hosted on <strong>GitHub Pages</strong>. The cPerch site itself sets no cookies and runs no analytics or trackers. As with any website, the hosting provider (GitHub) may process standard technical information such as your IP address in its server logs to operate and protect the service. That processing is governed by <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement">GitHub's Privacy Statement</a>. Links from this site to GitHub or other sites are subject to those sites' own policies.</p>
+
+    <h2>10. Children's privacy</h2>
+    <p>cPerch is a developer tool and is not directed at children. It collects no personal information from anyone, including children.</p>
+
+    <h2>11. Your choices and rights</h2>
+    <p>Because cPerch collects no personal data and sends nothing off your device, there is no stored personal information for us to access, correct, or delete. You remain in full control of your local Claude files, and you can quit or uninstall cPerch at any time.</p>
+
+    <h2>12. Changes to this policy</h2>
+    <p>If this policy changes, the updated version will be posted on this page with a new "Last updated" date. Material changes will also be noted in the project's release notes.</p>
+
+    <h2>13. Contact</h2>
+    <p>Questions about privacy in cPerch? Please <a href="https://github.com/Vedant1202/cPerch/issues">open an issue on GitHub</a>.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <a class="brand" href="./" style="font-size:15px"><svg class="mark" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#fff" stroke="rgba(0,0,0,.12)"/><path d="M7 12.4l3.1 3.1 6.7-7.3" stroke="#5d7142" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg> cPerch</a>
+    <nav aria-label="Footer">
+      <a href="./#features">Features</a>
+      <a href="privacy.html">Privacy policy</a>
+      <a href="https://github.com/Vedant1202/cPerch">GitHub</a>
+    </nav>
+    <span>Built with Swift for macOS</span>
+  </div>
+</footer>
+</body>
+</html>
