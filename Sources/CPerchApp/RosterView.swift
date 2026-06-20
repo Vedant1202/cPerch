@@ -135,25 +135,25 @@ struct RosterView: View {
             Divider().overlay(dividerColor)
             footer
         }
-        .overlay(alignment: .bottomLeading) { helpHintCallout }
     }
 
-    /// The one-time first-run callout near the "?" (v0.6). Visible only while `showHelpHint` is true —
-    /// MenuBarController owns the flag and its auto-dismiss; opening Help replaces the list, so the
-    /// callout goes away then too.
-    @ViewBuilder private var helpHintCallout: some View {
-        if showHelpHint {
+    /// The one-time first-run callout (v0.6): a small accent bubble with a downward tail that points
+    /// at the highlighted "?" in the footer. Anchored to the "?" button (see `footer`), shown only
+    /// while `showHelpHint` is true — MenuBarController owns the flag and its auto-dismiss; opening
+    /// Help replaces the list, so the callout goes away then too.
+    private var helpHintBubble: some View {
+        let accent = Color(NSColor.controlAccentColor)
+        return VStack(alignment: .leading, spacing: 0) {
             Text("New here? Tap for help.")
                 .font(TokenFonts.ui(11, weight: .medium))
+                .foregroundStyle(.white)
                 .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(NSColor.windowBackgroundColor))
-                        .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
-                )
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(TokenColors.separator, lineWidth: 1))
-                .padding(.leading, 12).padding(.bottom, 42)
+                .background(RoundedRectangle(cornerRadius: 8).fill(accent))
+            DownTriangle().fill(accent).frame(width: 12, height: 6).padding(.leading, 11)
         }
+        .fixedSize()
+        .shadow(color: .black.opacity(0.22), radius: 6, y: 2)
+        .allowsHitTesting(false)
     }
 
     /// The roster surface (A6): a solid window background when Reduce Transparency is effective,
@@ -280,12 +280,18 @@ struct RosterView: View {
             .help("Settings")
 
             Button { showingHelp = true } label: {
-                Image(systemName: "questionmark.circle")
+                Image(systemName: showHelpHint ? "questionmark.circle.fill" : "questionmark.circle")
                     .font(.system(size: 12))
+                    .foregroundStyle(showHelpHint ? Color.white : TokenColors.secondaryText)
+                    .padding(2)
+                    .background { if showHelpHint { Circle().fill(Color(NSColor.controlAccentColor)) } }
             }
             .buttonStyle(.plain)
-            .foregroundStyle(TokenColors.secondaryText)
             .help("Help")
+            // First-run callout, anchored just above the "?" with its tail pointing down at it (v0.6).
+            .overlay(alignment: .bottomLeading) {
+                if showHelpHint { helpHintBubble.offset(x: -3, y: -34) }
+            }
 
             Spacer()
 
@@ -298,6 +304,18 @@ struct RosterView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
+    }
+}
+
+/// A small downward-pointing triangle — the tail of the first-run Help callout (v0.6).
+private struct DownTriangle: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.midX, y: r.maxY))
+        p.closeSubpath()
+        return p
     }
 }
 
