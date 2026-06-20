@@ -4,18 +4,20 @@
 terminals and the Claude desktop app), shows each session's status and latest message, and lets
 you jump to the existing session window. Tagline: *a perch for your Claude sessions.*
 
-## ✅ Project status — v0 + five post-v0 batches shipped & merged to `main`
+## ✅ Project status — v0.6.0 released; v0 + six post-v0 batches on `main`
 
-v0 shipped 2026-06-18 (detection pipeline, menu-bar dot + roster, jump, calm notifications). Five
-post-v0 batches have since landed and are now **squash-merged to `main`** (one commit per version):
-dedup-hardening (v0.1/v0.2), group-by-host + over-counting/retention (v0.3), the v0.4 daily-driver
-batch (launch-at-login, global hotkey, richer menu-bar, error/completion notifications), and the
-**v0.5 accessibility batch** (shape-coded status, baseline contrast fix, high-contrast mode, VoiceOver,
-reduce motion/transparency, Accessibility settings tab, white menu-bar plate). **141 tests.**
+v0 shipped 2026-06-18; six post-v0 batches have since landed on `main`: dedup-hardening (v0.1/v0.2),
+group-by-host + over-counting/retention (v0.3), the v0.4 daily-driver batch (launch-at-login, global
+hotkey, richer menu-bar, error/completion notifications), the v0.5 accessibility batch (shape-coded
+status, contrast fix, high-contrast mode, VoiceOver, reduce motion/transparency, Accessibility tab,
+white menu-bar plate), and the **v0.6 in-app Help batch** ("?" Help panel, first-run hint, copy
+diagnostics, About). The project's **first public release, v0.6.0**, is published on GitHub Releases
+(unsigned zip + DMG) via a one-command pipeline (`scripts/release.sh` → tag-triggered macOS workflow).
+**143 tests.**
 
-**New here? Read the handover chain, newest first:** [docs/handover-v0.5.md](docs/handover-v0.5.md) →
-[v0.4](docs/handover-v0.4.md) → [v0.2](docs/handover-v0.2.md) → [v0](docs/handover-v0.md) — pickup
-guides (build/run, architecture, gotchas, what's next).
+**New here? Read the handover chain, newest first:** [docs/handover-v0.6.md](docs/handover-v0.6.md) →
+[v0.5](docs/handover-v0.5.md) → [v0.4](docs/handover-v0.4.md) → [v0.2](docs/handover-v0.2.md) →
+[v0](docs/handover-v0.md) — pickup guides (build/run, architecture, gotchas, what's next).
 
 ## What we're building (v0)
 
