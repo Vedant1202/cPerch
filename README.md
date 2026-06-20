@@ -53,7 +53,7 @@ was that one in again?"* cPerch answers that without you switching apps.
 
 ### Download
 
-Grab the latest **`.dmg`** (drag cPerch to Applications) or **`.zip`** from the
+Grab the latest **`.dmg`** (recommended) or **`.zip`** from the
 [Releases page](https://github.com/Vedant1202/cPerch/releases/latest).
 
 **First launch (one-time).** cPerch isn't notarized by Apple yet, so macOS blocks the first open:
