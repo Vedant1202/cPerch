@@ -31,6 +31,7 @@ cat > "${DEST}/Contents/Info.plist" <<PLIST
     <key>CFBundleDisplayName</key><string>cPerch</string>
     <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleExecutable</key><string>${APP_NAME}</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleVersion</key><string>${VERSION}</string>
@@ -42,8 +43,16 @@ cat > "${DEST}/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# TODO: bundle an .icns app icon (optional for an LSUIElement agent — the menu-bar
-# dot is drawn at runtime, and the app has no Dock presence).
+# App icon (Finder / About box / the DMG). Generated from assets/brand/cperch-app-icon.svg
+# by assets/brand/make-icns.sh. Optional for an LSUIElement agent (no Dock icon, and the
+# menu-bar glyph is drawn at runtime), so a missing file just warns rather than failing.
+ICON_SRC="assets/AppIcon.icns"
+if [ -f "$ICON_SRC" ]; then
+  cp "$ICON_SRC" "${DEST}/Contents/Resources/AppIcon.icns"
+  echo "▸ Bundled app icon ($ICON_SRC)"
+else
+  echo "  (no $ICON_SRC — skipping icon; run ./assets/brand/make-icns.sh to generate it)"
+fi
 
 echo "▸ Ad-hoc signing (so UNUserNotificationCenter + TCC work locally; Developer-ID later)…"
 codesign --force --deep --sign - "$DEST" 2>/dev/null || echo "  (codesign skipped)"
