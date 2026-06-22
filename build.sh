@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 
 APP_NAME="CPerch"
 BUNDLE_ID="com.vedant.cperch"
-VERSION="0.7.0"
+VERSION="0.7.1"
 DEST="dist/${APP_NAME}.app"
 
 echo "▸ Building release…"

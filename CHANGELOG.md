@@ -6,6 +6,8 @@ All notable changes to cPerch are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-22
+
 ### Changed
 - Release downloads are version-tagged (`CPerch-X.Y.Z.dmg`); the version-less `cPerch-macos.*`
   aliases are gone, and the website's download button points at the latest release page.
