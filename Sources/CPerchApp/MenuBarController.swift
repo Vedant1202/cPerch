@@ -141,23 +141,31 @@ final class MenuBarController: NSObject {
         popover.animates = !effective(preferences.preferences.reduceMotion,
                                       system: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
         if let button = statusItem.button {
-            let dotColor = color(for: model.glyph)
-            // A1 — shape-coded dot: a distinct SF Symbol per status (tinted, full color) when the
-            // user keeps shapes on (default); the plain colored oval when they opt out. Either way
-            // the glyph rides on a white plate (`plated`) so it never blends into a light or busy
-            // wallpaper behind the translucent menu bar — a fixed-hue dot has no guaranteed contrast
-            // there, and the bar can't be assumed light or dark.
-            let foreground = preferences.preferences.showStatusShapes
-                ? (Self.symbolForeground(for: model.glyph, color: dotColor) ?? Self.dotImage(color: dotColor))
-                : Self.dotImage(color: dotColor)
-            let image = Self.plated(foreground)
-            button.image = image
-            button.imagePosition = model.count == nil ? .imageOnly : .imageLeft
-            // The needs-you count rides next to the dot — small and subtle, no quota text.
-            if let count = model.count {
-                button.attributedTitle = Self.countTitle(count)
-            } else {
+            // Resting state shows the cPerch bird; the instant a session is live the emphasized
+            // status glyph (plated, colored) takes over. They never share the bar's ~17px, so the
+            // status stays as loud as before — the bird is just the brand at rest.
+            if case .idle = model.glyph {
+                button.image = Self.birdImage()
+                button.imagePosition = .imageOnly
                 button.attributedTitle = NSAttributedString(string: "")
+            } else {
+                let dotColor = color(for: model.glyph)
+                // A1 — shape-coded dot: a distinct SF Symbol per status (tinted, full color) when the
+                // user keeps shapes on (default); the plain colored oval when they opt out. Either way
+                // the glyph rides on a white plate (`plated`) so it never blends into a light or busy
+                // wallpaper behind the translucent menu bar — a fixed-hue dot has no guaranteed contrast
+                // there, and the bar can't be assumed light or dark.
+                let foreground = preferences.preferences.showStatusShapes
+                    ? (Self.symbolForeground(for: model.glyph, color: dotColor) ?? Self.dotImage(color: dotColor))
+                    : Self.dotImage(color: dotColor)
+                button.image = Self.plated(foreground)
+                button.imagePosition = model.count == nil ? .imageOnly : .imageLeft
+                // The needs-you count rides next to the dot — small and subtle, no quota text.
+                if let count = model.count {
+                    button.attributedTitle = Self.countTitle(count)
+                } else {
+                    button.attributedTitle = NSAttributedString(string: "")
+                }
             }
             // A4 — the live VoiceOver value: the most-urgent summary ("2 sessions need you" /
             // "1 running" / "all quiet"). The static label ("cPerch") is set once in `init`.
@@ -262,6 +270,40 @@ final class MenuBarController: NSObject {
         color.setFill()
         NSBezierPath(ovalIn: NSRect(x: 0, y: 0, width: diameter, height: diameter)).fill()
         image.unlockFocus()
+        return image
+    }
+
+    /// The cPerch bird as a **template** image for the resting (idle) bar state, so the menu bar
+    /// tints it to its own light/dark appearance (no plate needed — idle is the quiet state).
+    /// Traced from the brand mark's body path (assets/brand/cperch-mark.svg): facing right, tail
+    /// down, drawn tight to its bounds. The emphasized status glyphs replace it whenever a session
+    /// is live, so the two never compete for the bar's ~17px.
+    private static func birdImage(height: CGFloat = 15) -> NSImage {
+        // Bounding box of the body path in the SVG's design space.
+        let minX: CGFloat = 6, minY: CGFloat = 16, designW: CGFloat = 112, designH: CGFloat = 64
+        let s = height / designH
+        let image = NSImage(size: NSSize(width: designW * s, height: designH * s))
+        image.lockFocus()
+        // SVG y grows downward; the image context is y-up — flip while scaling.
+        func p(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
+            NSPoint(x: (x - minX) * s, y: height - (y - minY) * s)
+        }
+        let path = NSBezierPath()
+        path.move(to: p(118, 34))
+        path.curve(to: p(98, 18),  controlPoint1: p(112, 26), controlPoint2: p(106, 20))
+        path.curve(to: p(76, 24),  controlPoint1: p(90, 16),  controlPoint2: p(82, 18))
+        path.curve(to: p(48, 40),  controlPoint1: p(66, 32),  controlPoint2: p(56, 36))
+        path.curve(to: p(36, 47),  controlPoint1: p(44, 42),  controlPoint2: p(40, 44))
+        path.curve(to: p(6, 80),   controlPoint1: p(28, 55),  controlPoint2: p(16, 66))
+        path.curve(to: p(40, 62),  controlPoint1: p(16, 72),  controlPoint2: p(28, 66))
+        path.curve(to: p(70, 69),  controlPoint1: p(52, 66),  controlPoint2: p(60, 70))
+        path.curve(to: p(100, 50), controlPoint1: p(84, 68),  controlPoint2: p(94, 60))
+        path.curve(to: p(118, 34), controlPoint1: p(104, 44), controlPoint2: p(108, 40))
+        path.close()
+        NSColor.black.setFill()
+        path.fill()
+        image.unlockFocus()
+        image.isTemplate = true
         return image
     }
 

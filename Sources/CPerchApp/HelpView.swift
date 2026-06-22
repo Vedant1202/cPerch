@@ -152,10 +152,15 @@ struct HelpView: View {
     }
 
     private var aboutSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             sectionTitle("About")
-            Text("cPerch \(appVersion)").font(TokenFonts.ui(12, weight: .medium))
-            Text("A perch for your Claude sessions.").font(TokenFonts.ui(11)).foregroundStyle(TokenColors.secondaryText)
+            HStack(alignment: .center, spacing: 11) {
+                CPerchMark(height: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("cPerch \(appVersion)").font(TokenFonts.ui(12, weight: .medium))
+                    Text("A perch for your Claude sessions.").font(TokenFonts.ui(11)).foregroundStyle(TokenColors.secondaryText)
+                }
+            }
             Text("MIT License").font(TokenFonts.ui(11)).foregroundStyle(TokenColors.secondaryText)
         }
     }
