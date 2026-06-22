@@ -12,7 +12,7 @@
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-555.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5%2F6-F05138.svg)](https://swift.org)
 [![Tests](https://img.shields.io/badge/tests-143%20passing-3b6d11.svg)](#development)
-[![Release](https://img.shields.io/badge/release-v0.6.0-3b6d11.svg)](https://github.com/Vedant1202/cPerch/releases/latest)
+[![Release](https://img.shields.io/github/v/release/Vedant1202/cPerch?label=release&color=3b6d11)](https://github.com/Vedant1202/cPerch/releases/latest)
 
 cPerch is a native macOS menu-bar app that watches your running Claude Code sessions — across terminal
 windows and the Claude desktop app — and surfaces them in one place. A glance at your menu bar tells you
@@ -153,7 +153,7 @@ scripts/              test + fixture-capture helpers
 
 ## Project status
 
-**v0.6.0 is released** — download the DMG or zip from the
+**cPerch is released** — download the latest DMG or zip from the
 [Releases page](https://github.com/Vedant1202/cPerch/releases/latest) (unsigned for now; see the
 "Open Anyway" note above). The core experience — detection, the menu-bar indicator, the session list,
 Jump, notifications, accessibility, and in-app Help — is complete. Next: Developer-ID signing +
