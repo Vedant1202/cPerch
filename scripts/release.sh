@@ -7,6 +7,7 @@
 # empty [Unreleased]), commits "release: vX.Y.Z", creates an annotated tag vX.Y.Z, and pushes
 # main + the tag. The tag push triggers .github/workflows/release.yml, which builds the app and
 # publishes the GitHub Release (zip + DMG) with this version's changelog section as the notes.
+# Finally it cherry-picks the release commit onto dev so dev never drifts behind main.
 #
 # --dry-run previews the edits and the tag without committing or pushing (and skips the
 # branch/remote guards so you can preview from any branch).
@@ -64,9 +65,28 @@ printf '%s\n' "$NEW_BUILD" > build.sh
 printf '%s\n' "$NEW_CHANGELOG" > CHANGELOG.md
 git add build.sh CHANGELOG.md
 git commit -m "release: $TAG"
+RELEASE_SHA="$(git rev-parse HEAD)"
 git tag -a "$TAG" -m "cPerch $VERSION"
 git push origin main
 git push origin "$TAG"
 
 echo "✓ pushed $TAG — the release workflow will build and publish it:"
 echo "  https://github.com/Vedant1202/cPerch/actions"
+
+# Keep dev in step with the release so it never drifts behind main (this script only commits to
+# main). Cherry-pick the release commit onto dev — it touches just build.sh + CHANGELOG, so it
+# applies cleanly even over a squash-merged dev. Best-effort: the release is already published,
+# so any hiccup prints a manual follow-up instead of failing the run.
+if git ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
+  echo "▸ Syncing dev with $TAG…"
+  git fetch -q origin
+  git checkout -B dev origin/dev
+  if git cherry-pick "$RELEASE_SHA"; then
+    git push origin dev && echo "✓ dev now includes $TAG" \
+      || echo "⚠ release is out, but pushing dev failed — push dev yourself"
+  else
+    git cherry-pick --abort 2>/dev/null || true
+    echo "⚠ couldn't auto-sync dev (conflict) — run: git checkout dev && git cherry-pick $RELEASE_SHA"
+  fi
+  git checkout main
+fi
