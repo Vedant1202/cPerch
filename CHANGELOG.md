@@ -6,6 +6,8 @@ All notable changes to cPerch are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-22
+
 ### Added
 - **Branding & app icon.** cPerch has a visual identity now — a songbird perched on a terminal
   `>_` prompt. The app ships a real icon (a bundled `.icns`); the menu-bar item shows the bird at
