@@ -6,16 +6,29 @@ import CPerchCore
 struct SettingsView: View {
     @ObservedObject var store: PreferencesStore
 
+    /// The bundle's marketing version (e.g. "0.6.0"); "unknown" under a bare `swift run`.
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    }
+
     var body: some View {
-        TabView {
-            GeneralSettingsTab(prefs: $store.preferences)
-                .tabItem { Label("General", systemImage: "gearshape") }
-            NotificationSettingsTab(prefs: $store.preferences)
-                .tabItem { Label("Notifications", systemImage: "bell") }
-            AccessibilitySettingsTab(prefs: $store.preferences)
-                .tabItem { Label("Accessibility", systemImage: "accessibility") }
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                CPerchMark(height: 17)
+                Text("cPerch").font(TokenFonts.ui(15, weight: .semibold))
+                Spacer()
+                Text(appVersion).font(TokenFonts.ui(11)).foregroundStyle(.secondary)
+            }
+            TabView {
+                GeneralSettingsTab(prefs: $store.preferences)
+                    .tabItem { Label("General", systemImage: "gearshape") }
+                NotificationSettingsTab(prefs: $store.preferences)
+                    .tabItem { Label("Notifications", systemImage: "bell") }
+                AccessibilitySettingsTab(prefs: $store.preferences)
+                    .tabItem { Label("Accessibility", systemImage: "accessibility") }
+            }
+            .frame(width: 480, height: 320)
         }
-        .frame(width: 480, height: 320)
         .padding(20)
     }
 }

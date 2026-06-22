@@ -6,6 +6,13 @@ All notable changes to cPerch are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Branding & app icon.** cPerch has a visual identity now — a songbird perched on a terminal
+  `>_` prompt. The app ships a real icon (a bundled `.icns`); the menu-bar item shows the bird at
+  rest and the colored status glyph when a session is live; and the mark appears in the popover,
+  Settings, and Help/About headers. The website (favicon, header and footer, social card) and the
+  README carry it too.
+
 ## [0.6.0] - 2026-06-19
 
 ### Added

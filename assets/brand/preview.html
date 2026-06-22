@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cPerch — brand preview</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.6 -apple-system, "SF Pro Text", system-ui, sans-serif; margin: 0; background: #fff; color: #1c1b19; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 40px 32px 80px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #8f8c80; margin: 0 0 8px; }
+  h2 { font-size: 13px; font-weight: 600; color: #8f8c80; margin: 36px 0 14px; }
+  .panel { padding: 28px; border-radius: 16px; display: flex; gap: 40px; align-items: center; flex-wrap: wrap; }
+  .light { background: #faf9f5; border: 1px solid #e7e4d8; }
+  .dark { background: #1c1b19; }
+  .dark .cap { color: #cfccc2; }
+  .row { display: flex; gap: 32px; align-items: flex-end; flex-wrap: wrap; }
+  figure { margin: 0; text-align: center; }
+  .cap { font-size: 12px; color: #8f8c80; margin-top: 8px; }
+  img { display: block; }
+  .menubar { display: inline-flex; align-items: center; gap: 14px; padding: 7px 16px; border-radius: 9px; }
+  .mb-light { background: #e9e7df; }
+  .mb-dark { background: #2b2a27; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>cPerch — brand preview</h1>
+  <p class="sub">A perch for your Claude sessions. Rendered from the source SVGs in <code>assets/brand/</code>.</p>
+
+  <h2>APP ICON — AT SIZE</h2>
+  <div class="panel light">
+    <div class="row">
+      <figure><img src="cperch-app-icon.svg" width="256" height="256" alt="app icon 256"><figcaption class="cap">256</figcaption></figure>
+      <figure><img src="cperch-app-icon.svg" width="128" height="128" alt="app icon 128"><figcaption class="cap">128</figcaption></figure>
+      <figure><img src="cperch-app-icon.svg" width="64" height="64" alt="app icon 64"><figcaption class="cap">64</figcaption></figure>
+      <figure><img src="cperch-app-icon.svg" width="32" height="32" alt="app icon 32"><figcaption class="cap">32</figcaption></figure>
+      <figure><img src="cperch-app-icon.svg" width="16" height="16" alt="app icon 16"><figcaption class="cap">16</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="two">
+    <div>
+      <h2>MARK — ON LIGHT</h2>
+      <div class="panel light">
+        <figure><img src="cperch-mark.svg" height="96" alt="ink mark"><figcaption class="cap">ink</figcaption></figure>
+        <figure><img src="cperch-mark-orange.svg" height="96" alt="orange mark"><figcaption class="cap">orange</figcaption></figure>
+      </div>
+    </div>
+    <div>
+      <h2>MARK — ON DARK</h2>
+      <div class="panel dark">
+        <figure><img src="cperch-mark-white.svg" height="96" alt="white mark"><figcaption class="cap">white</figcaption></figure>
+        <figure><img src="cperch-mark-orange.svg" height="96" alt="orange mark"><figcaption class="cap">orange</figcaption></figure>
+      </div>
+    </div>
+  </div>
+
+  <h2>LOCKUP</h2>
+  <div class="two">
+    <div class="panel light"><img src="cperch-lockup.svg" height="76" alt="lockup ink"></div>
+    <div class="panel dark"><img src="cperch-mark-white.svg" height="76" alt="white mark" style="margin-right:16px"><span style="font:600 38px -apple-system,system-ui,sans-serif;color:#fff;letter-spacing:-1px">cPerch</span></div>
+  </div>
+
+  <h2>SMALL / FAVICON</h2>
+  <div class="panel light" style="gap:28px">
+    <figure><span class="menubar mb-light"><img src="cperch-menubar-template.svg" height="18" alt="glyph 18"></span><figcaption class="cap">glyph 18</figcaption></figure>
+    <figure><img src="../../site/favicon.svg" width="32" height="32" alt="favicon 32"><figcaption class="cap">favicon 32</figcaption></figure>
+    <figure><img src="../../site/favicon.svg" width="16" height="16" alt="favicon 16"><figcaption class="cap">favicon 16</figcaption></figure>
+  </div>
+</div>
+</body>
+</html>

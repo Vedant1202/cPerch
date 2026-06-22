@@ -239,6 +239,7 @@ struct RosterView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
+            CPerchMark(height: 15)
             Text("cPerch")
                 .font(TokenFonts.ui(13, weight: .semibold))
             Spacer()

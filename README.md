@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/cperch-mark-white.svg">
+    <img src="assets/brand/cperch-mark.svg" alt="cPerch" height="120">
+  </picture>
+</p>
+
 # cPerch
 
 > A perch for your Claude sessions.
