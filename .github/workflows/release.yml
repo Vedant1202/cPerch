@@ -68,12 +68,6 @@ jobs:
           echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
           echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
 
-          # Stable "latest" aliases so the website can link to a permanent URL —
-          # github.com/.../releases/latest/download/cPerch-macos.dmg always points at the newest
-          # release. Plain copies of the versioned artifacts (same bytes, version-less names).
-          cp "$ZIP" cPerch-macos.zip
-          cp "$DMG" cPerch-macos.dmg
-
       - name: Extract changelog notes
         run: |
           set -euo pipefail
@@ -98,5 +92,3 @@ jobs:
           files: |
             ${{ steps.pkg.outputs.zip }}
             ${{ steps.pkg.outputs.dmg }}
-            cPerch-macos.zip
-            cPerch-macos.dmg
