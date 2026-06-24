@@ -22,8 +22,11 @@ exact existing window. Detection is **privacy-focused** and **fully local**.
 It's built to solve a specific annoyance: when you're babysitting several agents at once, *"which window
 was that one in again?"* cPerch answers that without you switching apps.
 
-<!-- Add a screenshot here once captured, e.g. docs/assets/cperch.png -->
-> _Screenshots coming with the first release._
+<p align="center">
+  <img src="docs/assets/session-list.png" width="440"
+    alt="cPerch menu-bar dropdown listing running Claude Code sessions grouped Needs you / Working / Done, each with a shape- and color-coded status indicator, the latest message inline, and a one-click Jump button">
+</p>
+<p align="center"><sub><i>Representative UI preview — synthetic session data.</i></sub></p>
 
 ## Features
 
@@ -98,6 +101,14 @@ cPerch runs as a menu-bar accessory (no Dock icon). Look for its dot in the top-
    - **Notifications** — which events notify you, Focus/DND behavior, and how long banners persist.
    - **Accessibility** — status shapes, high contrast, reduce motion, and reduce transparency
      (each can follow the system or be forced on/off).
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/assets/settings-general.png" alt="cPerch Settings — General tab: appearance (System/Light/Dark), session-list grouping, finished-session retention, launch at login, and the global shortcut"><br><sub>General</sub></td>
+    <td align="center" width="33%"><img src="docs/assets/settings-notifications.png" alt="cPerch Settings — Notifications tab: opt-in alerts for needs-input, error, and completion, with Focus / Do-Not-Disturb behavior and banner persistence"><br><sub>Notifications</sub></td>
+    <td align="center" width="33%"><img src="docs/assets/settings-accessibility.png" alt="cPerch Settings — Accessibility tab: shape-coded status with a triangle / half-circle / checkmark legend, plus Follow-System controls for high contrast, reduce motion, and reduce transparency"><br><sub>Accessibility</sub></td>
+  </tr>
+</table>
 
 The menu-bar icon itself reflects the most urgent state at a glance, and shows a small count when more
 than one session needs you.
