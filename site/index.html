@@ -40,6 +40,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161512">
 <link rel="stylesheet" href="styles.css">
 <script src="theme.js" defer></script>
+<script src="showcase.js" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -142,6 +143,172 @@
         </div>
         <figcaption>cPerch lists your sessions — the ones waiting on you first.</figcaption>
       </figure>
+    </div>
+  </section>
+
+  <!-- SHOWCASE (feature carousel) -->
+  <section id="showcase" class="showcase">
+    <div class="wrap">
+      <div class="sec-head center">
+        <h2>A closer look</h2>
+        <p>What cPerch shows you the moment you open it — five things, one menu&#8209;bar click away.</p>
+      </div>
+    </div>
+
+    <div class="carousel" aria-roledescription="carousel" aria-label="cPerch feature tour">
+      <div class="wrap car-wrap">
+        <button class="car-arrow prev" type="button" aria-label="Previous feature" aria-controls="sc-track">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="track" id="sc-track" tabindex="0" aria-label="Features, use arrow keys to browse">
+
+          <!-- 1 -->
+          <article class="slide" role="group" aria-roledescription="slide" aria-label="1 of 5: See every session">
+            <div class="slide-visual">
+              <figure class="mock">
+                <div class="menubar" aria-hidden="true"><span class="mb-item">100%</span><span class="mb-item">9:41</span><span class="plate"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M7 12.4l3.1 3.1 6.7-7.3" stroke="#5d7142" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+                <div class="preview-card">
+                  <div class="pc-head"><span class="title">cPerch</span><span class="summary">2 need you</span></div>
+                  <div class="grp">Needs you</div>
+                  <div class="row">
+                    <span class="ind"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 3.4L21.3 20a1.5 1.5 0 01-1.3 2.2H4a1.5 1.5 0 01-1.3-2.2z" fill="#c75f3f"/><rect x="10.8" y="8.8" width="2.4" height="6.4" rx="1.2" fill="#fff"/><circle cx="12" cy="18.3" r="1.35" fill="#fff"/></svg></span>
+                    <div><div class="name">api <span class="wait">waiting 4m</span></div><div class="preview">Can I run the database migration?</div></div>
+                    <button class="jump" tabindex="-1">Jump</button>
+                  </div>
+                  <div class="row">
+                    <span class="ind"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 3.4L21.3 20a1.5 1.5 0 01-1.3 2.2H4a1.5 1.5 0 01-1.3-2.2z" fill="#c75f3f"/><rect x="10.8" y="8.8" width="2.4" height="6.4" rx="1.2" fill="#fff"/><circle cx="12" cy="18.3" r="1.35" fill="#fff"/></svg></span>
+                    <div><div class="name">web</div><div class="preview">All 128 tests green. Open the PR?</div></div>
+                    <button class="jump" tabindex="-1">Jump</button>
+                  </div>
+                  <div class="grp">Working</div>
+                  <div class="row">
+                    <span class="ind"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.4" fill="none" stroke="#3f6f9e" stroke-width="2.1"/><path d="M12 1.6A10.4 10.4 0 0012 22.4z" fill="#3f6f9e"/></svg></span>
+                    <div><div class="name">docs</div><div class="preview">Editing getting-started.mdx…</div></div>
+                  </div>
+                  <div class="grp">Done</div>
+                  <div class="row">
+                    <span class="ind"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#5d7142"/><path d="M7 12.5l3.1 3.1 6.6-7.2" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <div><div class="name">infra</div><div class="preview">Applied 3 changes, 0 to destroy.</div></div>
+                  </div>
+                </div>
+              </figure>
+            </div>
+            <div class="slide-copy">
+              <span class="kicker">In one place</span>
+              <h3>See every session</h3>
+              <p>Every Claude Code session you're running — in the terminal and in the Claude desktop app — in one list, with the ones waiting on you pinned to the top.</p>
+            </div>
+          </article>
+
+          <!-- 2 -->
+          <article class="slide" role="group" aria-roledescription="slide" aria-label="2 of 5: Status you can read at a glance">
+            <div class="slide-visual">
+              <div class="legend-card">
+                <div class="lg-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4L21.3 20a1.5 1.5 0 01-1.3 2.2H4a1.5 1.5 0 01-1.3-2.2z" fill="#c75f3f"/><rect x="10.8" y="8.8" width="2.4" height="6.4" rx="1.2" fill="#fff"/><circle cx="12" cy="18.3" r="1.35" fill="#fff"/></svg><div><div class="lg-t">Needs input</div><div class="lg-d">orange · triangle</div></div></div>
+                <div class="lg-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.4" fill="none" stroke="#3f6f9e" stroke-width="2.1"/><path d="M12 1.6A10.4 10.4 0 0012 22.4z" fill="#3f6f9e"/></svg><div><div class="lg-t">Running</div><div class="lg-d">blue · half-circle</div></div></div>
+                <div class="lg-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#5d7142"/><path d="M7 12.5l3.1 3.1 6.6-7.2" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="lg-t">Concluded</div><div class="lg-d">green · checkmark</div></div></div>
+              </div>
+            </div>
+            <div class="slide-copy">
+              <span class="kicker">Readable by everyone</span>
+              <h3>Status you can read at a glance</h3>
+              <p>Every session is needs-you, running, or done — shown with a distinct <strong>shape and</strong> a color, so it stays clear in grayscale and for the roughly 1 in 12 men with color-vision deficiency.</p>
+            </div>
+          </article>
+
+          <!-- 3 -->
+          <article class="slide" role="group" aria-roledescription="slide" aria-label="3 of 5: Jump to the exact window">
+            <div class="slide-visual">
+              <div class="jump-vis">
+                <div class="preview-card">
+                  <div class="row">
+                    <span class="ind"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 3.4L21.3 20a1.5 1.5 0 01-1.3 2.2H4a1.5 1.5 0 01-1.3-2.2z" fill="#c75f3f"/><rect x="10.8" y="8.8" width="2.4" height="6.4" rx="1.2" fill="#fff"/><circle cx="12" cy="18.3" r="1.35" fill="#fff"/></svg></span>
+                    <div><div class="name">api <span class="wait">waiting 4m</span></div><div class="preview">Can I run the database migration?</div></div>
+                    <button class="jump jump-hot" tabindex="-1">Jump <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  </div>
+                </div>
+                <div class="raise" aria-hidden="true">
+                  <div class="win-chrome"><i class="r"></i><i class="y"></i><i class="g"></i><span>api — Terminal</span></div>
+                  <div class="win-body"><span></span><span></span><span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="slide-copy">
+              <span class="kicker">No more hunting</span>
+              <h3>Jump to the exact window</h3>
+              <p>One click brings that session's existing window forward — the right terminal tab, or the Claude desktop app. cPerch never opens a second copy.</p>
+            </div>
+          </article>
+
+          <!-- 4 -->
+          <article class="slide" role="group" aria-roledescription="slide" aria-label="4 of 5: Notifications that respect your focus">
+            <div class="slide-visual">
+              <div class="set-mock">
+                <div class="set-tabs" aria-hidden="true"><span>General</span><span class="on">Notifications</span><span>Accessibility</span></div>
+                <div class="set-group">
+                  <div class="set-row"><div class="set-lab">A session needs you</div><span class="tgl on"></span></div>
+                  <div class="set-row"><div class="set-lab">A session hits an error</div><span class="tgl on"></span></div>
+                  <div class="set-row"><div class="set-lab">A session finishes</div><span class="tgl"></span></div>
+                </div>
+                <div class="set-group">
+                  <div class="set-row"><div class="set-lab">During Focus / Do Not Disturb</div><span class="pick">Respect Focus <svg width="9" height="6" viewBox="0 0 10 7" aria-hidden="true"><path d="M1 2.4 5 6 9 2.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="slide-copy">
+              <span class="kicker">Calm by default</span>
+              <h3>Notifications that respect your focus</h3>
+              <p>Opt in to what matters — a session needs you, hits an error, or finishes. cPerch honors Focus and Do Not Disturb, and stays quiet until you ask it not to.</p>
+            </div>
+          </article>
+
+          <!-- 5 -->
+          <article class="slide" role="group" aria-roledescription="slide" aria-label="5 of 5: Built for accessibility">
+            <div class="slide-visual">
+              <div class="set-mock">
+                <div class="set-tabs" aria-hidden="true"><span>General</span><span>Notifications</span><span class="on">Accessibility</span></div>
+                <div class="set-group">
+                  <div class="set-row"><div class="set-lab">Differentiate status with shapes</div><span class="tgl on"></span></div>
+                  <div class="set-legend" aria-hidden="true">
+                    <span class="lg"><svg viewBox="0 0 24 24"><path d="M12 3.4L21.3 20a1.5 1.5 0 01-1.3 2.2H4a1.5 1.5 0 01-1.3-2.2z" fill="#c75f3f"/><rect x="10.8" y="8.8" width="2.4" height="6.4" rx="1.2" fill="#fff"/><circle cx="12" cy="18.3" r="1.35" fill="#fff"/></svg>Needs</span>
+                    <span class="lg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.4" fill="none" stroke="#3f6f9e" stroke-width="2.1"/><path d="M12 1.6A10.4 10.4 0 0012 22.4z" fill="#3f6f9e"/></svg>Running</span>
+                    <span class="lg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#5d7142"/><path d="M7 12.5l3.1 3.1 6.6-7.2" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Done</span>
+                  </div>
+                </div>
+                <div class="set-group">
+                  <div class="set-row"><div class="set-lab">High contrast</div><span class="pick">Follow System <svg width="9" height="6" viewBox="0 0 10 7" aria-hidden="true"><path d="M1 2.4 5 6 9 2.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span></div>
+                  <div class="set-row"><div class="set-lab">Reduce motion</div><span class="pick">Follow System <svg width="9" height="6" viewBox="0 0 10 7" aria-hidden="true"><path d="M1 2.4 5 6 9 2.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="slide-copy">
+              <span class="kicker">Accessible by design</span>
+              <h3>Built for accessibility</h3>
+              <p>Shape-coded status, a high-contrast mode that follows your system setting, VoiceOver labels, and support for reduced motion and transparency.</p>
+            </div>
+          </article>
+
+        </div>
+
+        <button class="car-arrow next" type="button" aria-label="Next feature" aria-controls="sc-track">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="wrap car-foot">
+        <button class="car-play" type="button" aria-label="Pause the feature tour" aria-pressed="true">
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>
+        </button>
+        <div class="dots" role="group" aria-label="Choose a feature">
+          <button class="dot" type="button" aria-label="See every session" aria-current="true"></button>
+          <button class="dot" type="button" aria-label="Status you can read at a glance"></button>
+          <button class="dot" type="button" aria-label="Jump to the exact window"></button>
+          <button class="dot" type="button" aria-label="Notifications that respect your focus"></button>
+          <button class="dot" type="button" aria-label="Built for accessibility"></button>
+        </div>
+      </div>
     </div>
   </section>
 
